@@ -13,7 +13,7 @@ const Home = lazy(() => import("@pages/home"));
 const Login = lazy(() => import("@pages/login"));
 const Register = lazy(() => import("@pages/register"));
 const User = lazy(() => import("@pages/user"));
-const Contact = lazy(() => import("@pages/contact"));
+const Contact = lazy(() => import("@pages/contact/newIndex.tsx"));
 const Rights = lazy(() => import("@pages/rights"));
 const Who_am_i = lazy(() => import("@pages/who_am_i"));
 const Join = lazy(() => import("@pages/join"));
@@ -31,6 +31,7 @@ const Industry_detail = lazy(() => import("@pages/industry_detail"));
 const Solution = lazy(() => import("@pages/solution"));
 const Contrast = lazy(() => import("@pages/contrast"));
 const Download = lazy(() => import("@pages/download"));
+const Company = lazy(() => import("@pages/company"));
 
 const PrivateRoute = privateRoute(Route);
 
@@ -39,7 +40,7 @@ export default class App extends React.Component {
   public render(): React.ReactNode {
     return (
       <Provider {...stores}>
-        <Router >
+        <Router>
           <Suspense fallback={<Loading/>}>
             <Switch>
               <Route path="/" exact component={(props: any) => <Home {...props}/>}/>
@@ -55,11 +56,12 @@ export default class App extends React.Component {
               <Route path="/detail/:ipTypeNumber/:id" component={(props: any) => <Detail {...props}/>}/>
               <Route path="/login" component={(props: any) => <Login {...props}/>}/>
               <Route path="/register" component={(props: any) => <Register {...props}/>}/>
-              <PrivateRoute path="/user" component={(props: any) => <User {...props}/>}/>
+              <PrivateRoute path="/user/:type" component={(props: any) => <User {...props}/>}/>
               <Route path="/authentication" component={(props: any) => <Authentication {...props}/>}/>
               <Route path="/update-password" component={(props: any) => <UpdatePassword {...props}/>}/>
               <PrivateRoute path="/update/:ipTypeNumber/:id" exact component={(props: any) => <Update {...props}/>}/>
-              <PrivateRoute path="/update/:ipTypeNumber/:id/:iCheckStatus" exact component={(props: any) => <Update {...props}/>}/>
+              <PrivateRoute path="/update/:ipTypeNumber/:id/:iCheckStatus" exact
+                            component={(props: any) => <Update {...props}/>}/>
               <PrivateRoute path="/update" component={(props: any) => <Update {...props}/>}/>
               <PrivateRoute path="/download" component={(props: any) => <Download {...props}/>}/>
               <Route path="/ip-research" component={(props: any) => <IpResearch {...props}/>}/>
@@ -67,6 +69,7 @@ export default class App extends React.Component {
               <Route path="/industry_detail/:ipid" component={(props: any) => <Industry_detail {...props}/>}/>
               <Route path="/solution" component={(props: any) => <Solution {...props}/>}/>
               <Route path="/contrast" component={(props: any) => <Contrast {...props}/>}/>
+              <Route path="/company" component={(props: any) => <Company {...props}/>}/>
               <Route component={() => <NoMatch/>}/>
             </Switch>
           </Suspense>

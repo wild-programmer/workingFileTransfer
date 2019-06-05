@@ -30,7 +30,19 @@ export default class Login extends React.Component<IProps, ILoginState> {
 
   private filterParams() {
     // const { user_name, password } = this.state;
-
+    if (this.state.user_name === "" || this.state.user_name === null) {
+      this.setState({ message: "请输入手机号/邮箱", show: true });
+      return false;
+    }
+    if (this.state.password === "" || this.state.password === null) {
+      this.setState({ message: "请输入密码", show: true });
+      return false;
+    }
+    let mPatternPass = /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,16}$/;
+    if (!mPatternPass.test(this.state.password)) {
+      this.setState({ message: "请输入正确格式密码，密码长度不小于8位数，且必须包含数字、字母", show: true });
+      return false;
+    }
     return true;
   }
 
@@ -66,7 +78,7 @@ export default class Login extends React.Component<IProps, ILoginState> {
                 type="password"
                 className="form-control"
                 name="password"
-                placeholder="请输入不少于8位的密码"/>
+                placeholder="请输入不少于8位的密码，包含数字、字母"/>
             </div>
             <div className="form-group form-operation">
               <div className="thirty-checkbox">
@@ -83,7 +95,7 @@ export default class Login extends React.Component<IProps, ILoginState> {
             </div>
             <button
               onClick={async () => {
-                let isValidate = this.filterParams();
+                let isValidate = this.filterParams();                           
                 if (isValidate) {
                   const { user_name: userLogin, password: userPass, rememberPassword: remember }: any = this.state;
                   let isSuccess = await doLogin({ userLogin, userPass, remember });

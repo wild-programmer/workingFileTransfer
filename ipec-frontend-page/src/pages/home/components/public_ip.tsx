@@ -4,16 +4,16 @@ import { Link } from "react-router-dom";
 import { Swipe } from "@pages/home/components";
 import _chunk from "lodash/chunk";
 import _isArray from "lodash/isArray";
+import _isEmpty from "lodash/isEmpty";
 import default_img from "@assets/images/default_img_product.png";
 
-interface ICooperateIpProps {
+interface IPublicIpProps {
   data: any;
 }
 
-export default class CooperateIp extends React.Component<ICooperateIpProps> {
+export default class PublicIp extends React.Component<IPublicIpProps> {
   render() {
-    // const { data: { sublist: tmp } } = this.props;
-    const { data: tmp }  = this.props;
+    const { data: tmp } = this.props;
     let options: object = { effect: "slide", pagination: null, loop: false, autoplay: false };
     let sublist: any[] = [];
     if (_isArray(tmp)) {
@@ -24,21 +24,19 @@ export default class CooperateIp extends React.Component<ICooperateIpProps> {
     }
     return (
       <div className="content-container flex-column justify-content-center align-items-center special-container">
-        <span className="span-title">热门IP推荐</span>
+        {!_isEmpty(sublist) && <span className="span-title">公式中的IP</span>}
         <Swipe options={{ ...options }}>
           {
             sublist && sublist.map((arr: any, index: number) => (
               <div key={index} className="swiper-slide flex-row justify-content-between swipe-slide-area">
                 {arr && arr.map((item: any, idx: number) => (
-                  <Link to={`/detail/${item.sublist[0].ipTypeSuperiorNumber}/${item.sublist[0].ipid}`} key={idx}>
-                    <div className="swipe-slide-custom flex-column">
-                      <img src={item.dataPicUrl || default_img} alt=""/>
-                      <div className="cooperate-ip-last-line justify-content-between align-items-center">
-                        <span className="cooperate-ip-text">{item.dataName}</span>
-                        <i>{item.dataType}</i>
-                      </div>
+                  <div key={idx} className="swipe-slide-custom flex-column">
+                    <img src={item.dataPicUrl || default_img} alt=""/>
+                    <div className="cooperate-ip-last-line justify-content-between align-items-center">
+                      <span className="cooperate-ip-text">{item.dataName}</span>
+                      <Link to="/ip-list">{item.dataType}</Link>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             ))

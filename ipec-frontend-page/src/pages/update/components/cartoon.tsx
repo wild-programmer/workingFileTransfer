@@ -35,10 +35,7 @@ export default class Cartoon extends React.Component<ICartoonProps, ICartoonStat
     return (
       <div className="create-right-container flex-column">
         <div className="form-group flex-column">
-          <label className="input-label">是否上映<span className="label-dot">*</span></label>
-          {
-            updateList.isShow
-          }
+          <label className="input-label">是否上映<span className="label-dot">*</span></label> 
           <div className="radio-group">
             <div
               onClick={() => this.setState({ isShow: 1 })}

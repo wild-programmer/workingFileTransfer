@@ -50,6 +50,82 @@ export default class Register extends React.Component<IProps, IRegisterState> {
   }
 
   private filterParams() {
+    let mPattern = /^1([38][0-9]|4[579]|5[0-3,5-9]|6[6]|7[0135678]|9[89])\d{8}$/;
+    if (this.state.user_mobile === "" || this.state.user_mobile === null) {
+      this.setState({ message: "请输入手机号", show: true });
+      return false;
+    }
+    if (!mPattern.test(this.state.user_mobile)) {
+      this.setState({ message: "请输入正确手机号", show: true });
+      return false;
+    }
+    if (this.state.user_code === "" || this.state.user_code === null) {
+      this.setState({ message: "请输入验证码", show: true });
+      return false;
+    }
+    if (this.state.firstPassword === "" || this.state.firstPassword === null) {
+      this.setState({ message: "请输入密码", show: true });
+      return false;
+    }
+    let mPatternPass = /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,16}$/;
+    if (!mPatternPass.test(this.state.firstPassword)) {
+      this.setState({ message: "请输入正确格式密码，密码长度不小于8位数，且必须包含数字、字母", show: true });
+      return false;
+    }
+    if (this.state.lastPassword === "" || this.state.lastPassword === null) {
+      this.setState({ message: "请重复密码", show: true });
+      return false;
+    }
+    if (this.state.firstPassword !== this.state.lastPassword) {
+      this.setState({ message: "请输入相同密码", show: true });
+      <Toast onClose={() => {
+        this.setState({ show: false });
+      }} duration={2} message="请输入相同密码"/>;
+      return false;
+    }
+    if (!this.state.read) {
+      this.setState({ message: "请阅读相关协议并勾选", show: true });
+      return false;
+    }
+
+    return true;
+  }
+
+  private filterEmailParams() {
+    let mPatternEmail = /^([a-z0-9A-Z]+[-|\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\.)+[a-zA-Z]{2,}$/;
+    if (this.state.user_mobile === "" || this.state.user_mobile === null) {
+      this.setState({ message: "请输入邮箱号", show: true });
+      return false;
+    }
+    if (!mPatternEmail.test(this.state.user_mobile)) {
+      this.setState({ message: "请输入正确邮箱号", show: true });
+      return false;
+    }
+    if (this.state.user_code === "" || this.state.user_code === null) {
+      this.setState({ message: "请输入验证码", show: true });
+      return false;
+    }
+    if (this.state.firstPassword === "" || this.state.firstPassword === null) {
+      this.setState({ message: "请输入密码", show: true });
+      return false;
+    }
+    let mPatternPass = /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,16}$/;
+    if (!mPatternPass.test(this.state.firstPassword)) {
+      this.setState({ message: "请输入正确格式密码，密码长度不小于8位数，且必须包含数字、字母", show: true });
+      return false;
+    }
+    if (this.state.lastPassword === "" || this.state.lastPassword === null) {
+      this.setState({ message: "请重复密码", show: true });
+      return false;
+    }
+    if (this.state.firstPassword !== this.state.lastPassword) {
+      this.setState({ message: "请输入相同密码", show: true });
+      return false;
+    }
+    if (!this.state.readEmail) {
+      this.setState({ message: "请阅读相关协议并勾选", show: true });
+      return false;
+    }
     return true;
   }
 
@@ -61,6 +137,15 @@ export default class Register extends React.Component<IProps, IRegisterState> {
 
   // 获取验证码倒计时-手机
   handleClick = () => {
+    let mPattern = /^1([38][0-9]|4[579]|5[0-3,5-9]|6[6]|7[0135678]|9[89])\d{8}$/;
+    if (this.state.user_mobile === "" || this.state.user_mobile === null) {
+      this.setState({ message: "请输入手机号", show: true });
+      return;
+    }
+    if (!mPattern.test(this.state.user_mobile)) {
+      this.setState({ message: "请输入正确手机号", show: true });
+      return;
+    }
     if (!this.state.liked) {
       return;
     }
@@ -93,6 +178,15 @@ export default class Register extends React.Component<IProps, IRegisterState> {
 
   // 获取验证码倒计时-邮箱
   handleClickEmail = () => {
+    let mPatternEmail = /^([a-z0-9A-Z]+[-|\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\.)+[a-zA-Z]{2,}$/;
+    if (this.state.user_mobile === "" || this.state.user_mobile === null) {
+      this.setState({ message: "请输入邮箱号", show: true });
+      return;
+    }
+    if (!mPatternEmail.test(this.state.user_mobile)) {
+      this.setState({ message: "请输入正确邮箱号", show: true });
+      return;
+    }
     if (!this.state.likedEmail) {
       return;
     }
@@ -116,18 +210,6 @@ export default class Register extends React.Component<IProps, IRegisterState> {
       <Toast onClose={() => {
         this.setState({ show: false });
       }} duration={2} message="请输入正确邮箱号"/>;
-    }
-
-  };
-
-  // 两次密码是否一致
-  private checkPassword = () => {
-    if (this.state.firstPassword !== this.state.lastPassword) {
-      this.setState({ message: "请输入相同密码", show: true });
-      <Toast onClose={() => {
-        this.setState({ show: false });
-      }} duration={2} message="请输入相同密码"/>;
-      return;
     }
   };
 
@@ -198,7 +280,7 @@ export default class Register extends React.Component<IProps, IRegisterState> {
                   type="password"
                   className="form-control"
                   name="firstPassword"
-                  placeholder="请输入不少于8位的密码"
+                  placeholder="请输入不少于8位的密码，包含数字、字母"
                   onChange={(e) => {
                     this.setState({ firstPassword: e.currentTarget.value });
                   }}
@@ -242,11 +324,11 @@ export default class Register extends React.Component<IProps, IRegisterState> {
                 className="form-group login-btn-area"
                 onClick={
                   async () => {
-                    this.checkPassword();
+                    //this.checkPassword();
                     let isValidate = this.filterParams();
                     if (isValidate && this.state.firstPassword === this.state.lastPassword) {
-                      const { user_mobile: userLogin, user_code: code, firstPassword: userPass }: Readonly<any> = this.state;
-                      let isSuccess = await onRegister({ userLogin, code, userPass });
+                      const { user_mobile: userLogin, user_code: code, firstPassword: userPass, btnNum: type }: Readonly<any> = this.state;
+                      let isSuccess = await onRegister({ userLogin, code, userPass, type });
                       if (_isObject(isSuccess)) {
                         this.setState({ message: isSuccess.message, show: true });
                       } else if (typeof isSuccess === "boolean" && this.state.firstPassword === this.state.lastPassword) {
@@ -288,10 +370,10 @@ export default class Register extends React.Component<IProps, IRegisterState> {
                   className="btn-primary"
                   id="getMessage"
                   onClick={async () => {
+                    this.handleClickEmail();
                     const { user_mobile: userLogin, btnNum: receiverType, sendNum: sendType }: Readonly<any> = this.state;
                     const data: any = await onCodeReg({ userLogin, receiverType, sendType });
                     console.log(data);
-                    this.handleClickEmail();
                   }}
                 >
                   {this.state.likedEmail ? `${this.state.countEmail}秒后重新发送` : "获取验证码"}
@@ -303,7 +385,7 @@ export default class Register extends React.Component<IProps, IRegisterState> {
                   type="password"
                   className="form-control"
                   name="password"
-                  placeholder="请输入不少于8位的密码"
+                  placeholder="请输入不少于8位的密码，包含数字、字母"
                   onChange={(e) => {
                     this.setState({ firstPassword: e.currentTarget.value });
                   }}
@@ -348,11 +430,10 @@ export default class Register extends React.Component<IProps, IRegisterState> {
                 className="form-group login-btn-area"
                 onClick={
                   async () => {
-                    this.checkPassword();
-                    let isValidate = this.filterParams();
+                    let isValidate = this.filterEmailParams();
                     if (isValidate && this.state.firstPassword === this.state.lastPassword) {
-                      const { user_mobile: userLogin, user_code: code, firstPassword: userPass }: Readonly<any> = this.state;
-                      let isSuccess = await onRegister({ userLogin, code, userPass });
+                      const { user_mobile: userLogin, user_code: code, firstPassword: userPass, btnNum: type }: Readonly<any> = this.state;
+                      let isSuccess = await onRegister({ userLogin, code, userPass, type });
                       if (_isObject(isSuccess)) {
                         this.setState({ message: isSuccess.message, show: true });
                       } else if (typeof isSuccess === "boolean" && this.state.firstPassword === this.state.lastPassword) {

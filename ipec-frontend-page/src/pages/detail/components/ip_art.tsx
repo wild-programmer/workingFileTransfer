@@ -390,7 +390,7 @@ export default class IpArt extends React.Component<IpArtProps, IpArtState> {
                   <div>
                     <div className="first-line flex-row align-items-end justify-content-between">
                       <div>
-                        <span className="ip-title">{item.ipName}</span>
+                        <span className="ip-title word-ellipsis">{item.ipName}</span>
                         {flag === true &&
                         <span className="ip-care-status active " onClick={async () => {
                           if (sessionStorage.getItem("user") !== null) {
@@ -400,7 +400,7 @@ export default class IpArt extends React.Component<IpArtProps, IpArtState> {
                           }
                           await this._getStatus(detail, id, 0);
                         }}>
-                              <i className="iconfont ic_follow icon-ic_follow1"/>已关注
+                              <i className="iconfont ic_follow iconic_praise"/>已关注
                             </span>
                         }
                         {flag === false &&
@@ -413,7 +413,7 @@ export default class IpArt extends React.Component<IpArtProps, IpArtState> {
                           }
                           await this._getStatus(detail, id, 1);
                         }}>
-                            <i className="iconfont ic_follow icon-ic_follow1"/>加入关注
+                            <i className="iconfont ic_follow iconic_praise"/>加入关注
                           </span>
                         }
                       </div>
@@ -462,7 +462,7 @@ export default class IpArt extends React.Component<IpArtProps, IpArtState> {
                           <p className="word-ellipsis">{i.postTitle}</p>
                           <p className="attention  flex-row justify-content-between">
                             <span
-                              className="attention_num iconfont ic_praise icon-ic_praise">{i.portalPostLikeCount}</span>
+                              className="attention_num iconfont ic_praise iconic_praise">{i.portalPostLikeCount}</span>
                             <span
                               className="date ">{i.postSource}&nbsp;|&nbsp;{moment(i.createDate).format('YYYY/MM/DD')}</span>
                           </p>

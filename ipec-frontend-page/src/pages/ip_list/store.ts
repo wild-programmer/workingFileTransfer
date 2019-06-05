@@ -1,5 +1,5 @@
 import { action, observable, toJS } from "mobx";
-import { reqIpTypeList, reqIpList, reqIpTypeListTab } from "@utils/api";
+import { reqIpTypeList, reqIpList, reqIpTypeListTab,listMainType ,listCountry} from "@utils/api";
 import { object } from 'prop-types';
 
 class IpListStore {
@@ -7,7 +7,21 @@ class IpListStore {
     subTypeList: {},
     typeSecond: [],
   };
+  @observable head_list_top: object = {
+    subTypeList_top: {},
+    typeSecond_top: [],
+  };
+  //新增的导航属性 用来记录选中的状态 类别 国别
+  @observable selectedchild: object = {
+    nav: '',  //..标记当前选中哪个类别
+    show:false, //记录类别是否显示
+    nav_number:'',//标记当前选中的是哪个类别的ipNunmber 传递给接口
+    case_: '', //记录当前选中的是哪个（公共的状态）
+    slectTime:'', //记录选中的时间
+    country:'',//记录选中的国家
+  };;
   @observable ipItemList: string[];
+  @observable listCountry: string[];
   @observable ipTypeListData: string[];
   @observable typeResult: string[];
   @observable page: object = {
@@ -18,9 +32,11 @@ class IpListStore {
 
   @observable customStatus: IStatus = {
     selected: "",
-    ipTypeSuperiorNumber: "",
+    ipTypeSuperiorNumbers: "",
+    ipIsAuthenticated:null,
     ipLocation: "",
     ipTypeNumber: "",
+    countryType:"",
     ipFormNumber: "",
     benginShowDate: "",
     endShowDate: "",
@@ -36,14 +52,53 @@ class IpListStore {
     await this.ipTypeListTab();
   }
 
+  async clearIpTypeListData(obj){
+    this.ipTypeListData = [];
+    this.page = {...obj}
+  }
+
+  async setSelectedchild(params:object){
+    this.selectedchild = { ...this.selectedchild, ...params };
+  }
+
   @action
   async setStatus(params: IStatus) {
+    // 清空数据
     this.customStatus = { ...this.customStatus, ...params };
+  }
+  async getCountryList() {
+    const {errorCode, result }:any = await listCountry();
+    if(errorCode == "200"){
+      this.listCountry = result;
+      console.log(result)
+    }
+  }
+
+  async getlistMainType(){
+    await this.getCountryList()
+    const {errorCode, result }:any = await listMainType();
+    console.log(result)
+    if (errorCode === "200") {
+    const subTypeList_top: object = {};
+      const typeSecond_top: object[] = [];
+      let ipTypeGuidObj: object = [];
+      result.forEach((item: any,index:any) => {
+        const type = item.typeName;
+        subTypeList_top[type] = item.childTypeList;
+        const typeGuid = item.mainTypeGuid;
+        ipTypeGuidObj = { ipTypeNumber: typeGuid, ipType: type };
+        typeSecond_top.push(ipTypeGuidObj);
+        console.log("subTypeList_top@")
+        console.log(subTypeList_top)
+      });
+      this.head_list_top = { subTypeList_top, typeSecond_top };
+    }
   }
 
   @action
   async ipTypeList() {
     const { errorCode, result }: any = await reqIpTypeList();
+    // console.log(result)
     if (errorCode === "200") {
       const subTypeList: object = {};
       const typeSecond: object[] = [];
@@ -56,7 +111,6 @@ class IpListStore {
         typeSecond.push(ipTypeGuidObj);
       });
       this.head_list = { subTypeList, typeSecond };
-
       // let arr: object[] = [];
       // arr.push(subTypeList);
       // arr.forEach((item: any) => {
@@ -74,12 +128,12 @@ class IpListStore {
   @action
   async ipTypeListTab() {
     const {
-      ipTypeSuperiorNumber, ipLocation, ipTypeNumber,
-      ipFormNumber, benginShowDate, endShowDate,
+      ipTypeSuperiorNumbers, ipLocation, ipTypeNumber,countryType,
+      ipFormNumber, benginShowDate, endShowDate,ipIsAuthenticated,
       ipStatus, ipSex, currentPage, pageSize,
     } = this.customStatus;
     let { errorCode, result: { ipQueryInfoVOs, totalCount } }: any = await reqIpTypeListTab({
-      ipTypeSuperiorNumber, ipLocation, ipTypeNumber,
+      ipTypeSuperiorNumbers, ipLocation, ipTypeNumber,ipIsAuthenticated,countryType,
       ipFormNumber, benginShowDate, endShowDate,
       ipStatus, ipSex, currentPage, pageSize,
     });

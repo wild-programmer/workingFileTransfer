@@ -1,5 +1,5 @@
 export { default as IpArt } from "./art"
-export { default as IpStar } from "./ip_star"
-export { default as IpAvatar } from "./ip_avatar"
+export { default as IpTv } from "./tv"
+// export { default as IpStar } from "./ip_star"
 export { default as Swiper } from "./swiper"
 export { default as Model } from "../../../components/model"

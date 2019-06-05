@@ -8,3 +8,7 @@ export { default as Book } from "./book";
 export { default as People } from "./people";
 export { default as Cultural } from "./cultural";
 export { default as Fiction } from "./fiction";
+export { default as Common } from "./common";
+export { default as Wangeditor } from "./wangeditor";
+export { default as Upload } from "./upload";
+export { default as Rule } from "./rule";

@@ -3,20 +3,37 @@ import Header from "@components/header";
 import Footer from "@components/footer";
 import "@assets/scss/user.scss";
 import { inject, observer } from "mobx-react";
-import { Select } from 'antd';
 import 'antd/dist/antd.css';
 import Toast from "@components/toast";
 import _isObject from "lodash/isObject";
+import _find from "lodash/find";
+import _isEmpty from "lodash/isEmpty";
 import moment from 'moment';
-import { savePic } from '@utils/api';
+import { listCountry, savePic, setUserInformation } from '@utils/api';
 import Alert from '@components/alert';
-import { number } from "prop-types";
 import { Link } from 'react-router-dom';
+import { toJS } from 'mobx';
+import { Select } from 'antd';
+import ic_user from '@assets/images/user.svg';
+import ic_attestation from '@assets/images/user/ic_attestation.svg';
+import ic_attestation_pr from '@assets/images/user/ic_attestation_pr.svg';
 
-const Option = Select.Option;
+const { Option } = Select;
 const children = [];
 
-//
+const companyTypeKV = {
+  7: "版权方",
+  3: "代理方",
+  8: "品牌方",
+  9: "授权方",
+  10: "零售商",
+  11: "服务商",
+};
+
+/**
+ * realStatus 实名认证状态  1已实名，2未实名、3审核中 ,
+ */
+
 interface IUesrState {
   nextNum: Number;
   childNum: Number;
@@ -33,7 +50,6 @@ interface IUesrState {
   };
   UpdataPassword: { oldUserPass: string, userPass: string, userGuid: string, userPassAgain: string };
   RealName: {
-    userpic: string,
     nikeName: string,
     userRealName: string,
     realname: string,
@@ -45,17 +61,38 @@ interface IUesrState {
     code: string,
     file: string,
     cardFile: string,
-    selected: Object
+    cardFanFile: string,
+    userPicUrl: string,
+    userFile: string,
   };
   iconShow: boolean;
   iconShowNext: boolean;
   show: boolean;
+  alertShow: boolean;
   message: string;
+  alertMessage: string;
   checkStatus: string;
   papersPicGuid: string;
+  papersPositivePicGuid: string;
   pickGuid: string;
   picGuid: string;
   companyGuid: string;
+  realStatus: number;
+  companyData: {
+    ipPicGuid: string;
+    companyName: string;
+    companyType: any[];
+    companySelected: any[];
+    companyCountries: string;
+    businessLicenseGuid: string;
+    companyTelephone: string;
+    companyMailbox: string;
+    companyAddress: string;
+    companyDesc: string;
+    logoPic: string;
+    businessLicense: string;
+  }
+
 }
 
 const numberKV2 = {
@@ -87,17 +124,18 @@ export default class User extends React.Component<IProps, IUesrState> {
       user: this.props.user,
       btnNum: 1, // 1.我发布的ip 2.我上船的 3.我更新的 4.我参与的
       childNum: 0, // 1.我发布的ip 2.我上船的 3.我更新的 4.我参与的
-      nextNum: 1, // 1.我的发布 2.个人信息 3.账号安全
+      nextNum: 1, // 1.我的发布 2.个人信息 3.账号安全，4.企业信息
       phoneNuber: '', // 修改的手机号
       phoneCode: '', // 修改的手机号验证码
       emailNumber: '',
       emailCode: '', // 修改的邮箱验证码
-      userinfo: JSON.parse(sessionStorage.getItem("user")),//从sessionStorage 后被userinfo接口的返回值替换
+      userinfo: JSON.parse(sessionStorage.getItem("user")), // 从sessionStorage 后被userinfo接口的返回值替换
       message: "",
       show: false,
+      alertMessage: "",
+      alertShow: false,
       UpdataPassword: { oldUserPass: '', userPass: '', userGuid: '', userPassAgain: '' }, // 更新密码
       RealName: {
-        userpic:'',
         nikeName: '',
         userRealName: '',
         realname: '',
@@ -109,74 +147,124 @@ export default class User extends React.Component<IProps, IUesrState> {
         code: '',
         file: '',
         cardFile: '',
-        selected: {
-          enter: true,
-          1: false,
-          2: false,
-          3: false,
-          4: false,
-          5: false,
-          6: false,
-        }
+        cardFanFile: '',
+        userPicUrl: '',
+        userFile: ''
       },
-      companyGuid:'',
+      companyGuid: '',
       papersPicGuid: '',
+      papersPositivePicGuid: '',
       picGuid: '',
       pickGuid: '',
       checkStatus: '',
-    };
+      realStatus: 0,
+      companyData: {  // 公司认证字段
+        ipPicGuid: '',
+        companyName: '',
+        companyType: [],
+        companySelected: [
+          { name: "版权方", id: 7, },
+          { name: "代理方", id: 3, },
+          { name: "品牌方", id: 8, },
+          { name: "授权方", id: 9, },
+          { name: "零售商", id: 10, },
+          { name: "服务商", id: 11, },
+        ],
+        companyCountries: '',
+        businessLicenseGuid: '',
+        companyTelephone: '',
+        companyMailbox: '',
+        companyAddress: '',
+        companyDesc: '',
+        logoPic: '',
+        businessLicense: '',
+      },
+    }
+    ;
   }
 
   async componentDidMount() {
-    document.title = "IPEC";
-    const { nav_store, user } = this.props;
+    document.title = "版圈儿";
+    const { nav_store, match: { params } } = this.props;
+    let type = Number(params['type']);
     await nav_store.navList();
-    await this.getCompanyList();
-    await this.getMyRelease('');
-    await this.getuserinfo();
+    if (type === 1) {
+      await this.getMyRelease('');
+    } else if (type === 2) {
+      await this.getPersonInfo();
+    } else if (type === 4) {
+      await this.getCompanyInfo();
+    }
+    await this.getPersonInfo();
+    await User.listCountry();
+  }
+
+  static async listCountry() {
+    const { errorCode, result }: any = await listCountry();
+    if (errorCode === "200") {
+      for (let item of result) {
+        children.push(<Option value={item.resourceValue}
+                              key={item.id + item.resourceValue}>{item.resourceValue}</Option>);
+      }
+    }
   }
 
   /**
-   * 或者个人信息
+   * 回显个人信息
    */
-  async getuserinfo() {
-    let isSuccess = await this.state.user.getUserInfo(this.state.userinfo.userGuid);
-    let realname_ = this.state.RealName;
-    let result = isSuccess.message;
-    realname_.userpic = result.picUrl;
-    realname_.dsc = result.desc;
-    realname_.positions = result.job;
-    realname_.nikeName = result.userNickname;
-    realname_.userRealName = result.userRealName;
-    realname_.companyname = result.companyName?result.companyName:'';
-    realname_.selected = {
-      enter: false,
-      1: false,
-      2: false,
-      3: false,
-      4: false,
-      5: false,
-      6: false,
-    };
-    //为个人信息赋值
-    if(result.companyType && result.companyType !== '' ){
-      let key:any,
-        slect = result.companyType.split(',');
-      realname_.selected['enter'] = true;
-      for (key in slect){
-        realname_.selected[slect[key]] = true;
-      }
-    }
-    if (isSuccess.request) {
+  async getPersonInfo() {
+    const { user } = this.props;
+    const { userinfo: { userGuid } } = this.state;
+    await user.getUserInfo(userGuid);
+    const { RealName } = this.state;
+    let personInfo = toJS(user.personInfo);
+    RealName.userRealName = personInfo.userRealName;
+    RealName.file = personInfo.cardPic;
+    RealName.cardFile = personInfo.papersPositivePic;
+    RealName.cardFanFile = personInfo.papersPic;
+    let papersPicGuid = personInfo.papersPicGuid;
+    let papersPositivePicGuid = personInfo.papersPositivePicGuid;
+    let picGuid = personInfo.picGuid;
+    this.setState({
+      RealName,
+      papersPicGuid,
+      papersPositivePicGuid,
+      picGuid
+    });
+  }
+
+  /**
+   * 回显公司信息
+   */
+  async getCompanyInfo() {
+    const { user } = this.props;
+    const { userinfo: { userGuid } } = this.state;
+    await user.getCompanyInfo(userGuid);
+    let companyInfo = toJS(user.companyInfo);
+    if (!_isEmpty(companyInfo)) {
       this.setState({
-        userinfo: result,
-        pickGuid:result.picGuid,
-        companyGuid:result.companyGuid,
-        RealName:realname_
+        companyData: {
+          ipPicGuid: companyInfo.ipPicGuid,
+          companyName: companyInfo.companyName,
+          companyType: companyInfo.companyType.split(','),
+          companySelected: [
+            { name: "版权方", id: 7, },
+            { name: "代理方", id: 3, },
+            { name: "品牌方", id: 8, },
+            { name: "授权方", id: 9, },
+            { name: "零售商", id: 10, },
+            { name: "服务商", id: 11, },
+          ],
+          companyCountries: companyInfo.companyCountries,
+          businessLicenseGuid: companyInfo.businessLicenseGuid,
+          companyTelephone: companyInfo.companyTelephone,
+          companyMailbox: companyInfo.companyMailbox,
+          companyAddress: companyInfo.companyAddress,
+          companyDesc: companyInfo.companyDesc,
+          logoPic: companyInfo.logoPic,
+          businessLicense: companyInfo.businessLicense,
+        },
       });
-      sessionStorage.setItem("user", JSON.stringify(result));
-    } else {
-      this.setState({ message: isSuccess.message, show: true });
     }
   }
 
@@ -255,50 +343,69 @@ export default class User extends React.Component<IProps, IUesrState> {
    * 上传图片
    * @param e
    * @param field
-   * @param picType 1首页幻灯片，2ip海报图，3个人头像，4名片，5证件照，6ppt页面
+   * @param picType 1首页幻灯片，2ip海报图，3个人头像/企业logo，4名片，5证件照，6ppt页面，7 营业执照
+   * @param el
    */
   async uploadImg(e, field, picType, el) {
-    let file = e.target.files[0],
-      reader = new FileReader(),
+    let file = e.target.files[0];
+    const max_size = 1024 * 1024 * 10;
+    let reader = new FileReader(),
       _RealName = this.state.RealName;
     reader.readAsDataURL(file);
     reader.onload = async (e) => {
       let formData = new FormData();
       formData.append("file", file);
       const params = { file: formData, picType };
-      const { errorCode, result = {} }: any = await savePic(params);
-      if (errorCode === '200' && result.errorCode === 200) {
-        _RealName[el] = e.target['result'];
-        this.setState({
-          RealName: _RealName
-        });
-        // 动态设置setState 的值
-        const data = {};
-        data[field] = result.data;
-        this.setState(data);
-        return true;
+      if (file.size > max_size) {
+        this.setState({ alertMessage: '图片过大,请重新上传！', alertShow: true });
+        return;
       } else {
-        _RealName[el] = '';
-        this.setState({
-          RealName: _RealName
-        });
-        return false;
+        const { errorCode, result = {} }: any = await savePic(params);
+        if (errorCode === '200' && result.errorCode === 200) {
+          if (picType === 7 || field === "ipPicGuid") {
+            let companyData = this.state.companyData;
+            companyData[el] = e.target['result'];
+            companyData[field] = result.data;
+            this.setState({
+              companyData,
+            });
+            console.log(this.state.companyData);
+          } else {
+            _RealName[el] = e.target['result'];
+            _RealName[field] = result.data;
+            this.setState({
+              RealName: _RealName
+            });
+            // 修改个人信息-头像
+            if (field === "userPicUrl") {
+              const { userinfo: { userGuid } } = this.state;
+              const params = {
+                userGuid,
+                picGuid: _RealName.userPicUrl,
+              };
+              const { errorCode, result }: any = await setUserInformation(params);
+              if (errorCode === "200" && result.errorCode === 200) {
+                _RealName.userPicUrl = result.data;
+                this.setState({
+                  RealName: _RealName
+                });
+              } else {
+                this.setState({
+                  alertMessage: result.data.errorMsg,
+                  alertShow: true,
+                });
+              }
+            }
+          }
+          // 动态设置setState 的值
+          const data = {};
+          data[field] = result.data;
+          this.setState(data);
+          return true;
+        }
       }
-    };
-  }
 
-  // 获取公司列表
-  async getCompanyList() {
-    let isSuccess = await this.state.user.getCompanyList();
-    if (isSuccess) {
-      isSuccess.forEach((element: any) => {
-        children.push(<Option key={element.companyGuid}  value={element.companyGuid+`:index${element.id}`}>{element.companyName}</Option>);
-      });
-    } else {
-      this.setState({ message: '获取公司列表失败', show: true });
-      this.props.history.push("/user");
-      // this.onSubmitResult(code, userLogin);
-    }
+    };
   }
 
   // 获取验证码
@@ -316,21 +423,24 @@ export default class User extends React.Component<IProps, IUesrState> {
       },
       validation = null,
       _this = this;
-    if (type == 'editPhone') {
+    if (type === 'editPhone') {
       validation = _this.state.phoneNuber;
-    } else if (type == 'editEmail') {
+    } else if (type === 'editEmail') {
       validation = _this.state.emailNumber;
     }
     switch (type) {
       case 'editPhone':
         param.receiverType = 1;
         param.sendType = 4;
+        break;
       case 'editEmail':
         param.receiverType = 2;
         param.sendType = 4;
+        break;
       case 'editinformation':
         param.receiverType = 2;
         param.sendType = 3;
+        break;
       default:
     }
     if (this.reglPhoneEamil(type, validation)) return false;
@@ -339,7 +449,7 @@ export default class User extends React.Component<IProps, IUesrState> {
       receiverType: param.receiverType,
       sendType: param.sendType
     });
-    //如果成功 开始倒计时
+    // 如果成功 开始倒计时
     if (isSuccess.request) {
       let _Verification = {
         type,
@@ -348,8 +458,8 @@ export default class User extends React.Component<IProps, IUesrState> {
       this.setState({
         Verification: _Verification
       });
-      var interval = setInterval(() => {
-        if (this.state.Verification.number == 0) {
+      let interval = setInterval(() => {
+        if (this.state.Verification.number === 0) {
           clearInterval(interval);
           this.setState({
             Verification: {
@@ -369,117 +479,133 @@ export default class User extends React.Component<IProps, IUesrState> {
     this.setState({ message: isSuccess.message, show: true });
   }
 
-  //  接口消息提示
-  interfaceTip = (isSuccess: any, callback: Function) => {
-  };
-
-  // 保存个人信息 确认发送
-  async saveUserInformation({ }) {
-    let information = this.state.RealName;
+  /**
+   * 公司认证
+   */
+  async companyCertification() {
+    const { user } = this.props;
+    const { companyData, userinfo } = this.state;
     let param = {
-      picGuid: this.state.pickGuid,
-      userNickname: information.nikeName,
-      userRealName: information.userRealName,
-      companyName: information.companyname,
-      job: information.positions,
-      desc: information.dsc,
-      userGuid: this.state.userinfo.userGuid,
-      companyGuid:this.state.companyGuid,
-      companyType: null,
+      companyName: companyData.companyName,
+      companyDesc: companyData.companyDesc,
+      userGuid: userinfo.userGuid,
+      companyType: companyData.companyType.join(','),
+      ipPicGuid: companyData.ipPicGuid,
+      companyCountries: companyData.companyCountries,
+      businessLicenseGuid: companyData.businessLicenseGuid,
+      companyTelephone: companyData.companyTelephone,
+      companyMailbox: companyData.companyMailbox,
+      companyAddress: companyData.companyAddress,
     };
-    //判断是否是用户手动输入
-    if (information.selected['enter']) {
-      for (var key in information['selected']) {
-        if (key !== 'enter') {
-          if (param.companyType == null) {
-            if (information['selected'][key]) param.companyType = key;
-          } else {
-            if (information['selected'][key]) param.companyType += (',' + key);
-          }
+    // 检测param 是否符合提交条件
+    for (let key in param) {
+      if (param[key] === "") {
+        switch (key) {
+          case 'ipPicGuid':
+            this.setState({ alertMessage: '请上传企业LOGO', alertShow: true });
+            return false;
+          case 'companyName':
+            this.setState({ alertMessage: '请填写公司名称', alertShow: true });
+            return;
+          case 'companyType':
+            this.setState({ alertMessage: '请至少选择一个公司性质', alertShow: true });
+            return false;
+          case 'companyCountries':
+            this.setState({ alertMessage: '请选择公司国别', alertShow: true });
+            return false;
+          case 'businessLicenseGuid':
+            this.setState({ alertMessage: '请上传公司的营业执照', alertShow: true });
+            return false;
+          case 'companyTelephone':
+            this.setState({ alertMessage: '请填写公司的联系电话', alertShow: true });
+            return false;
+          case 'companyMailbox':
+            this.setState({ alertMessage: '请填写公司的联系邮箱', alertShow: true });
+            return false;
+          case 'companyAddress':
+            this.setState({ alertMessage: '请填写公司地址', alertShow: true });
+            return false;
+          case 'companyDesc':
+            this.setState({ alertMessage: '请填写公司简介', alertShow: true });
+            return false;
         }
-      }
-    }
-    //检测param 是否符合提交条件
-    for (key in param) {
-      if (param[key] == "" ) {
-        switch (key){
-          case 'picGuid':
-            this.setState({ message: '请完善头像', show: true });
-            return false
-            case 'userNickname':
-            this.setState({ message: '请填写昵称', show: true });
-            case 'userRealName':
-            this.setState({ message: '请填写真实姓名', show: true });
-            return false
-            case 'companyName':
-            this.setState({ message: '请填写公司名称', show: true });
-            return false
-            case 'desc':
-            this.setState({ message: '请填写个人简介', show: true });
-            return false
-            case 'job':
-            this.setState({ message: '请填担任职务', show: true });
-            return false
-        }
-        this.setState({ message: '请填写完整表单信息', show: true });
+        this.setState({ alertMessage: '请填写完整表单信息', alertShow: true });
         return false;
       }
-      if (key == 'companyType' && information.selected['enter'] && param[key] == null) {
-        this.setState({ message: '请选择公司性质', show: true });
-        return false;
-      }
+
     }
-    let isSuccess = await this.state.user.setInformation(param);
-    this.setState({ message: isSuccess.result.errorMsg, show: true });
-    //清空输入框内容
-    if (isSuccess.request) {
-      information.userpic = '';
-      information.dsc = '';
-      information.positions = '';
-      information.nikeName = '';
-      information.userRealName = '';
-      information.companyname = '';
-      information.selected = {
-        enter: true,
-        1: false,
-        2: false,
-        3: false,
-        4: false,
-        5: false,
-        6: false,
-      };
-      this.setState({
-        pickGuid:'',
-        RealName: information
-      });
-      this.getuserinfo()
-    }
+    let isSuccess = await user.companyCerfiticate(param);
+
+    this.setState({ alertMessage: isSuccess.message, alertShow: true });
   }
 
-  // 实名认证 确认发送
-  async editinformation({ }) {
+  /**
+   * 清空公司认证的数据
+   */
+  async clearCompanyCertification() {
+    const { companyData } = this.state;
+    companyData.ipPicGuid = "";
+    companyData.companyName = "";
+    companyData.companyType = [];
+    companyData.companyCountries = "";
+    companyData.businessLicenseGuid = "";
+    companyData.companyTelephone = "";
+    companyData.companyMailbox = "";
+    companyData.companyAddress = "";
+    companyData.companyDesc = "";
+    companyData.logoPic = "";
+    companyData.businessLicense = "";
+    this.setState({
+      companyData
+    });
+  }
+
+  /**
+   * 清空实名认证的数据
+   */
+  async clearCerfitication() {
+    const { RealName } = this.state;
+    RealName.userRealName = '';
+    this.setState({
+      papersPicGuid: '',
+      papersPositivePicGuid: '',
+      picGuid: '',
+      RealName,
+    });
+  }
+
+  /**
+   *  个人实名认证 确认发送
+   */
+
+  async certification() {
     let param = {
       papersPicGuid: this.state.papersPicGuid,
+      papersPositivePicGuid: this.state.papersPositivePicGuid,
       picGuid: this.state.picGuid,
       userGuid: this.state.userinfo.userGuid,
-      userRealName: this.state.RealName['realname']
+      userRealName: this.state.RealName['userRealName']
     };
-    if (param.userRealName == '') {
+    if (param.userRealName === '') {
       this.setState({ message: '请输入真实姓名', show: true });
       return false;
     }
-    if (param.papersPicGuid == '') {
-      this.setState({ message: '请上传证件照', show: true });
+    if (param.papersPicGuid === '') {
+      this.setState({ message: '请上传身份证反面', show: true });
       return false;
     }
-    if (param.userGuid == '') {
+    if (param.papersPositivePicGuid === '') {
+      this.setState({ message: '请上传身份证正面', show: true });
+      return false;
+    }
+    if (param.userGuid === '') {
       this.setState({ message: '请上传名片', show: true });
       return false;
     }
     let isSuccess = await this.state.user.RealAuthentication(param);
     this.setState({ message: isSuccess.result, show: true });
     if (isSuccess.request) {
-      var Reaname_ = this.state.RealName;
+      let Reaname_ = this.state.RealName;
       Reaname_.realname = '';
       this.setState({ nextNum: 3, RealName: Reaname_ });
     }
@@ -490,25 +616,25 @@ export default class User extends React.Component<IProps, IUesrState> {
     let receiverType = 0,
       code = null,
       number = null;
-    if (type == 'editPhone') {
+    if (type === 'editPhone') {
       receiverType = 1;
       number = this.state.phoneNuber;
       code = this.state.phoneCode;
-    } else if (type == 'editEmail') {
+    } else if (type === 'editEmail') {
       receiverType = 2;
       number = this.state.emailNumber;
       code = this.state.emailCode;
     }
     if (this.reglPhoneEamil(type, number)) return false;
-    if (code.length !== 6 || code == '') {
+    if (code.length !== 6 || code === '') {
       this.setState({ message: "请输入正确的验证码", show: true });
       return false;
     }
     let isSuccess = await this.state.user.userInformation({
       email: this.state.emailNumber,
-      code: code,
+      code,
       mobile: this.state.phoneNuber,
-      receiverType: receiverType,
+      receiverType,
       userGuid: this.state.userinfo.userGuid
     });
     if (isSuccess.request) {
@@ -523,7 +649,7 @@ export default class User extends React.Component<IProps, IUesrState> {
   async UpdataPassword() {
     let _updataPassword = this.state.UpdataPassword;
     _updataPassword.userGuid = this.state.userinfo.userGuid;
-    if (_updataPassword['userPass'] == '' || _updataPassword['userPassAgain'] == '') {
+    if (_updataPassword['userPass'] === '' || _updataPassword['userPassAgain'] === '') {
       this.setState({ message: '请把密码输入完整', show: true });
       return false;
     }
@@ -541,14 +667,14 @@ export default class User extends React.Component<IProps, IUesrState> {
     }
   }
 
-  //验证密码长度
+  // 验证密码长度
   invalidatapass = (e: any) => {
     if (e.target.value.length < 8) this.setState({ message: '密码长度不能少于8', show: true });
   };
-  //手机号邮箱号验证
+  // 手机号邮箱号验证
   reglPhoneEamil = (type: string, value: any) => {
-    if (type == 'editPhone') {
-      if (value == '') {
+    if (type === 'editPhone') {
+      if (value === '') {
         this.setState({ message: "请填写手机号", show: true });
         return true;
       }
@@ -556,8 +682,8 @@ export default class User extends React.Component<IProps, IUesrState> {
         this.setState({ message: "请输入正确手机号", show: true });
         return true;
       }
-    } else if (type == 'editEmail') {
-      if (value == '') {
+    } else if (type === 'editEmail') {
+      if (value === '') {
         this.setState({ message: "请填写邮箱号", show: true });
         return true;
       }
@@ -568,49 +694,17 @@ export default class User extends React.Component<IProps, IUesrState> {
     }
     return false;
   };
-  // 个人信息-选择下拉中的公司名
-  handleChange = (value: any, obj: any) => {
-    let RealName = this.state.RealName;
-    RealName.companyname = obj.props.children;
-    this.setState({
-      companyGuid:obj.key,
-      RealName: RealName
-    });
-  };
-  // 多选按钮
-  multiSelect = (el: string) => {
-    let realname_ = this.state.RealName;
-    realname_['selected'][el] = this.state.RealName['selected'][el] ? false : true;
-    if (el == 'enter') {
-      if (!this.state.RealName['selected'][el]) {
-        realname_['selected'] = {
-          enter: false,
-          1: false,
-          2: false,
-          3: false,
-          4: false,
-          5: false,
-          6: false,
-        };
-        // realname_['companyname'] = '';
-      }
-    }
-    this.setState({
-      RealName: realname_
-    });
-    // this.state.RealName['selected'][el]?this.state.RealName['selected'][el] = false:this.state.RealName['selected'][el]=true;
-  };
 
-  //切换左侧菜单
+  // 切换左侧菜单
   nextMenuNum = (num: number, nextNum: any) => {
-    if (nextNum == 30 && num == 3 && this.state.nextNum == 30) return false;
+    if (nextNum === 30 && num === 3 && this.state.nextNum === 30) return false;
 
     let _RealName = this.state.RealName;
     _RealName.cardFile = '';
     _RealName.file = '';
     _RealName.realname = '';
     let _state = {
-      RealName:_RealName,
+      RealName: _RealName,
       iconShow: false,
       iconShowNext: false,
       Verification: {
@@ -620,7 +714,7 @@ export default class User extends React.Component<IProps, IUesrState> {
       user: this.props.user,
       btnNum: this.state.btnNum, // 1.我发布的ip 2.我上船的 3.我更新的 4.我参与的
       childNum: this.state.childNum, // 1.我发布的ip 2.我上船的 3.我更新的 4.我参与的
-      nextNum: num, // 1.我的发布 2.个人信息 3.账号安全
+      nextNum: num, // 1.我的发布 2.个人信息 3.账号安全,4.企业信息
       phoneNuber: '', // 修改的手机号
       phoneCode: '', // 修改的手机号验证码
       emailNumber: '',
@@ -632,8 +726,9 @@ export default class User extends React.Component<IProps, IUesrState> {
       papersPicGuid: '',
       pickGuid: '',
     };
-    if (num == 3) {
+    if (num === 3) {
       this.setState(_state);
+      this.props.history.push("/user/3");
     } else {
       this.setState({
         nextNum: num
@@ -644,56 +739,91 @@ export default class User extends React.Component<IProps, IUesrState> {
   setchildNum = (num: number) => {
     this.setState({
       childNum: num,
-      nextNum: 30,
     });
+    this.props.history.push("/user/30");
   };
 
+  /**
+   * 获取公司认证字段value
+   */
+  async getInputValue(inputName, e) {
+    const { companyData } = this.state;
+    companyData[inputName] = e.target.value;
+    this.setState({
+      companyData
+    });
+  }
+
   render() {
-    const { nav_store, user, update } = this.props;
+    const { nav_store, user, update, match: { params } } = this.props;
     let { headerNav, footerNav } = nav_store;
-    const { myUpdateList, myReleaseList } = user;
-    const { checkStatus, RealName, UpdataPassword, nextNum, iconShowNext, iconShow, userinfo } = this.state;
+    const { myUpdateList, myReleaseList, personInfo, companyInfo } = user;
+    const { checkStatus, RealName, UpdataPassword, iconShowNext, iconShow, userinfo, companyData } = this.state;
+    const { userGuid } = userinfo;
+    let type = Number(params['type']);
+    const realStatus = personInfo.realStatus;
     return (
-      <div className="bg-color userhtml">
-        <Header data={headerNav} history={this.props.history} />
+      <div className="bg-color">
+        <Header data={headerNav} history={this.props.history}/>
         <div className="my-release">
           <div className="row">
             <div className="row-left">
               <div className="user-head">
                 <div className="img-circle">
-                  <img className="headimg" src={this.state.userinfo.picUrl} style={{display:this.state.userinfo.picUrl?'block':'none'}}></img>
+                  <input type="file" alt="" onChange={async (e) => {
+                    await this.uploadImg(e, 'userPicUrl', 3, "userFile");
+                  }}/>
+                  <img className="head-img" src={RealName.userPicUrl || userinfo.picUrl || ic_user} alt=""/>
+                  {
+                    userinfo.realStatus === 3 || userinfo.realStatus === 2 ?
+                      <span>
+                        {userinfo.userLogin}
+                        <img src={ic_attestation} alt=""/>
+                      </span>
+                      :
+                      < span>
+                        {personInfo.userRealName}
+                        < img src={ic_attestation_pr} alt=""/>
+                      </span>
+                  }
                 </div>
               </div>
-              <ul className="list-bottom">
-                <li className="active" onClick={() => this.nextMenuNum(1, null)}>
-                  <div className={nextNum === 1 ? "left-border" : "left-display"}>
-                  </div>
-                  <a>我的发布</a>
+              < ul className="list-bottom">
+                < li className="active" onClick={() => this.nextMenuNum(1, null)}>
+                  <div className={type === 1 ? "left-border" : "left-display"}/>
+                  <Link to="/user/1">我的发布</Link>
                 </li>
-                <li onClick={() => this.nextMenuNum(2, null)}>
-                  <div className={nextNum === 2 ? "left-border-two" : "left-display"}>
-                  </div>
-                  <a>个人信息</a>
+                <li onClick={async () => {
+                  this.nextMenuNum(2, null);
+                  await this.getPersonInfo();
+                }}>
+                  <div className={type === 2 ? "left-border-two" : "left-display"}/>
+                  <Link to="/user/2">个人认证</Link>
+                </li>
+                <li onClick={async () => {
+                  this.nextMenuNum(4, null);
+                  await this.getCompanyInfo();
+                }}>
+                  <div className={type === 4 ? "left-border-two" : "left-display"}/>
+                  < Link to="/user/4">企业主页</Link>
                 </li>
                 <li onClick={() => this.nextMenuNum(3, null)}>
-                  <div
-                    className={nextNum === 3 || nextNum === 30 ? "left-border-three" : "left-display"}>
-                  </div>
-                  <a>账号安全</a>
+                  <div className={type === 3 || type === 30 ? "left-border-three" : "left-display"}/>
+                  <Link to="/user/3">账号安全</Link>
                 </li>
               </ul>
             </div>
-            <div className={nextNum === 1 ? "row-right-my" : "row-display"}>
+            < div className={type === 1 ? "row-right-my" : "row-display"}>
               <div className="top-right">
                 <ul className="top-ul">
-                  <li className={this.state.btnNum === 1 ? "bordr" : "bordr-display"}
-                    onClick={async () => await this.setMenuNum(1)}><a>我发布的IP</a></li>
-                  <li className={this.state.btnNum === 2 ? "bordr-two" : "bordr-display"}
-                    onClick={async () => await this.setMenuNum(2)}><a>我上传的资料</a></li>
-                  <li className={this.state.btnNum === 3 ? "bordr-three" : "bordr-display"}
-                    onClick={async () => await this.setMenuNum(3)}><a>我更新的信息</a></li>
-                  <li className={this.state.btnNum === 4 ? "bordr-four" : "bordr-display"}
-                    onClick={async () => await this.setMenuNum(4)}><a>我参与的活动</a></li>
+                  <li className={this.state.btnNum === 1 ? "borders" : "border-display"}
+                      onClick={async () => await this.setMenuNum(1)}><a>我发布的IP</a></li>
+                  <li className={this.state.btnNum === 2 ? "borders-two" : "border-display"}
+                      onClick={async () => await this.setMenuNum(2)}><a>我上传的资料</a></li>
+                  <li className={this.state.btnNum === 3 ? "borders-three" : "border-display"}
+                      onClick={async () => await this.setMenuNum(3)}><a>我更新的信息</a></li>
+                  <li className={this.state.btnNum === 4 ? "borders-four" : "border-display"}
+                      onClick={async () => await this.setMenuNum(4)}><a>我参与的活动</a></li>
                 </ul>
               </div>
               <div className="top-change">
@@ -703,27 +833,27 @@ export default class User extends React.Component<IProps, IUesrState> {
                     <li>筛选:</li>
                     <li>
                       <a className={checkStatus === '' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.filterGetUpdate('');
-                        }}>全部</a>
+                         onClick={async () => {
+                           await this.filterGetUpdate('');
+                         }}>全部</a>
                     </li>
                     <li>
                       <a className={checkStatus === '2' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.filterGetUpdate('2');
-                        }}>已发布</a>
+                         onClick={async () => {
+                           await this.filterGetUpdate('2');
+                         }}>已发布</a>
                     </li>
                     <li>
                       <a className={checkStatus === '1' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.filterGetUpdate('1');
-                        }}>审核中</a>
+                         onClick={async () => {
+                           await this.filterGetUpdate('1');
+                         }}>审核中</a>
                     </li>
                     <li>
                       <a className={checkStatus === '3' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.filterGetUpdate('3');
-                        }}>未通过审核</a>
+                         onClick={async () => {
+                           await this.filterGetUpdate('3');
+                         }}>未通过审核</a>
                     </li>
                   </ul>
                 }
@@ -733,27 +863,27 @@ export default class User extends React.Component<IProps, IUesrState> {
                     <li>筛选:</li>
                     <li>
                       <a className={checkStatus === '' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.getMyRelease('');
-                        }}>全部</a>
+                         onClick={async () => {
+                           await this.getMyRelease('');
+                         }}>全部</a>
                     </li>
                     <li>
                       <a className={checkStatus === '1' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.getMyRelease(1);
-                        }}>已发布</a>
+                         onClick={async () => {
+                           await this.getMyRelease(1);
+                         }}>已发布</a>
                     </li>
                     <li>
                       <a className={checkStatus === '3' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.getMyRelease('3');
-                        }}>审核中</a>
+                         onClick={async () => {
+                           await this.getMyRelease('3');
+                         }}>审核中</a>
                     </li>
                     <li>
                       <a className={checkStatus === '2' ? 'active' : ''}
-                        onClick={async () => {
-                          await this.getMyRelease('2');
-                        }}>未通过审核</a>
+                         onClick={async () => {
+                           await this.getMyRelease('2');
+                         }}>未通过审核</a>
                     </li>
                   </ul>
                 }
@@ -767,91 +897,91 @@ export default class User extends React.Component<IProps, IUesrState> {
                         <div className="table-list">
                           <table className="table table-striped table-bordered table-hover publish-table">
                             <thead>
-                              <tr>
-                                <th>序号</th>
-                                <th>IP名称</th>
-                                <th>IP类型</th>
-                                <th>状态</th>
-                                <th>添加日期</th>
-                                <th>发布日期</th>
-                                <th>备注</th>
-                                <th>操作</th>
-                              </tr>
+                            <tr>
+                              <th>序号</th>
+                              <th>IP名称</th>
+                              <th>IP类型</th>
+                              <th>状态</th>
+                              <th>添加日期</th>
+                              <th>发布日期</th>
+                              <th>备注</th>
+                              <th>操作</th>
+                            </tr>
                             </thead>
                             <tbody>
-                              {
-                                item.list && item.list.map((i, k) => {
-                                  return (
-                                    <tr key={k}>
-                                      <td>{k + 1}</td>
-                                      <td>
-                                        <div className="publish-table-td with-width-100">
-                                          {i.ipName}
-                                        </div>
-                                      </td>
-                                      <td>{numberKV2[item.ipTypeSuperiorNumber]}</td>
-                                      <td>
-                                        {
-                                          i.ipCheckStatus === 1 && <div className="publish-table-td">审核通过</div>
-                                        }
-                                        {
-                                          i.ipCheckStatus === 2 && <div className="publish-table-td">审核不通过</div>
-                                        }
-                                        {
-                                          i.ipCheckStatus === 3 && <div className="publish-table-td">审核中</div>
-                                        }
-                                      </td>
-                                      <td>
+                            {
+                              item.list && item.list.map((i, k) => {
+                                return (
+                                  <tr key={k}>
+                                    <td>{k + 1}</td>
+                                    <td>
+                                      <div className="publish-table-td with-width-100">
+                                        {i.ipName}
+                                      </div>
+                                    </td>
+                                    <td>{numberKV2[item.ipTypeSuperiorNumber]}</td>
+                                    <td>
+                                      {
+                                        i.ipCheckStatus === 1 && <div className="publish-table-td">审核通过</div>
+                                      }
+                                      {
+                                        i.ipCheckStatus === 2 && <div className="publish-table-td">审核不通过</div>
+                                      }
+                                      {
+                                        i.ipCheckStatus === 3 && <div className="publish-table-td">审核中</div>
+                                      }
+                                    </td>
+                                    <td>
+                                      <div className="publish-table-td">
+                                        {moment(i.createDate).format('YYYY-MM-DD')}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      {
+                                        i.checkTimedate &&
                                         <div className="publish-table-td">
-                                          {moment(i.createDate).format('YYYY-MM-DD')}
+                                          {moment(i.checkTimedate).format('YYYY-MM-DD')}
                                         </div>
-                                      </td>
-                                      <td>
+                                      }
+                                    </td>
+                                    <td>
+                                      <div className="publish-table-td">
+                                        {i.checkResult}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <div className="publish-table-td">
                                         {
-                                          i.checkTimedate &&
-                                          <div className="publish-table-td">
-                                            {moment(i.checkTimedate).format('YYYY-MM-DD')}
-                                          </div>
+                                          i.ipCheckStatus === 3 ?
+                                            <Link
+                                              to={`/update/${item.ipTypeSuperiorNumber}/${i.ipid}/${i.ipCheckStatus}`}
+                                              className="re-upload-a-btn">编辑</Link>
+                                            :
+                                            <Link
+                                              to={`/update/${item.ipTypeSuperiorNumber}/${i.ipid}`}
+                                              className="re-upload-a-btn">编辑</Link>
                                         }
-                                      </td>
-                                      <td>
-                                        <div className="publish-table-td">
-                                          {i.checkResult}
-                                        </div>
-                                      </td>
-                                      <td>
-                                        <div className="publish-table-td">
-                                          {
-                                            i.ipCheckStatus === 3 ?
-                                              <Link
-                                                to={`/update/${item.ipTypeSuperiorNumber}/${i.ipid}/${i.ipCheckStatus}`}
-                                                className="re-upload-a-btn">编辑</Link>
-                                              :
-                                              <Link
-                                                to={`/update/${item.ipTypeSuperiorNumber}/${i.ipid}`}
-                                                className="re-upload-a-btn">编辑</Link>
-                                          }
 
-                                          <a className="delete-a-btn"
-                                            onClick={async () => {
-                                              let ipid = i.ipid;
-                                              const params = {
-                                                userGuid: this.state.userinfo.userGuid,
-                                                ipid
-                                              };
-                                              const isSuccess = await user.deleteMyRelease(params);
-                                              if (_isObject(isSuccess)) {
-                                                this.setState({ message: isSuccess['msg'], show: true });
-                                                await this.getMyRelease({ checkStatus });
-                                              }
-                                            }}
-                                          >删除</a>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })
-                              }
+                                        <a className="delete-a-btn"
+                                           onClick={async () => {
+                                             let ipid = i.ipid;
+                                             const params = {
+                                               userGuid: this.state.userinfo.userGuid,
+                                               ipid
+                                             };
+                                             const isSuccess = await user.deleteMyRelease(params);
+                                             if (_isObject(isSuccess)) {
+                                               this.setState({ message: isSuccess['msg'], show: true });
+                                               await this.getMyRelease({ checkStatus });
+                                             }
+                                           }}
+                                        >删除</a>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            }
                             </tbody>
                           </table>
                         </div>
@@ -870,89 +1000,89 @@ export default class User extends React.Component<IProps, IUesrState> {
                         <div className="table-list">
                           <table className="table table-striped table-bordered table-hover publish-table">
                             <thead>
-                              <tr>
-                                <th>序号</th>
-                                <th>IP名称</th>
-                                <th>状态</th>
-                                <th>资料名称</th>
-                                <th>添加日期</th>
-                                <th>发布日期</th>
-                                <th>备注</th>
-                                <th>操作</th>
-                              </tr>
+                            <tr>
+                              <th>序号</th>
+                              <th>IP名称</th>
+                              <th>状态</th>
+                              <th>资料名称</th>
+                              <th>添加日期</th>
+                              <th>发布日期</th>
+                              <th>备注</th>
+                              <th>操作</th>
+                            </tr>
                             </thead>
                             <tbody>
-                              {
-                                item.list && item.list.map((i, k) => {
-                                  return (
-                                    <tr key={k}>
-                                      <td>{k + 1}</td>
-                                      <td>
-                                        <div className="publish-table-td with-width-100">
-                                          {i.ipName}
-                                        </div>
-                                      </td>
-                                      <td>
+                            {
+                              item.list && item.list.map((i, k) => {
+                                return (
+                                  <tr key={k}>
+                                    <td>{k + 1}</td>
+                                    <td>
+                                      <div className="publish-table-td with-width-100">
+                                        {i.ipName}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      {
+                                        i.checkStatus === 1 && <div className="publish-table-td">审核中</div>
+                                      }
+                                      {
+                                        i.checkStatus === 2 && <div className="publish-table-td">审核通过</div>
+                                      }
+                                      {
+                                        i.checkStatus === 3 && <div className="publish-table-td">审核不通过</div>
+                                      }
+                                    </td>
+                                    <td>
+                                      <div className="publish-table-td">
                                         {
-                                          i.checkStatus === 1 && <div className="publish-table-td">审核中</div>
+                                          i.remark.replace(/\^/g, ',')
                                         }
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <div className="publish-table-td">
+                                        {moment(i.createDate).format('YYYY-MM-DD')}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      {
+                                        i.checkTimedate &&
+                                        <div className="publish-table-td">
+                                          {moment(i.checkTimedate).format('YYYY-MM-DD')}
+                                        </div>
+                                      }
+                                    </td>
+                                    <td>
+                                      <div className="publish-table-td">
+                                        {i.checkResult}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <div className="publish-table-td">
                                         {
-                                          i.checkStatus === 2 && <div className="publish-table-td">审核通过</div>
+                                          i.fileAddress && <a href={i.fileAddress} download>下载</a>
                                         }
-                                        {
-                                          i.checkStatus === 3 && <div className="publish-table-td">审核不通过</div>
-                                        }
-                                      </td>
-                                      <td>
-                                        <div className="publish-table-td">
-                                          {
-                                            i.remark.replace(/\^/g, ',')
-                                          }
-                                        </div>
-                                      </td>
-                                      <td>
-                                        <div className="publish-table-td">
-                                          {moment(i.createDate).format('YYYY-MM-DD')}
-                                        </div>
-                                      </td>
-                                      <td>
-                                        {
-                                          i.checkTimedate &&
-                                          <div className="publish-table-td">
-                                            {moment(i.checkTimedate).format('YYYY-MM-DD')}
-                                          </div>
-                                        }
-                                      </td>
-                                      <td>
-                                        <div className="publish-table-td">
-                                          {i.checkResult}
-                                        </div>
-                                      </td>
-                                      <td>
-                                        <div className="publish-table-td">
-                                          {
-                                            i.fileAddress && <a href={i.fileAddress} download>下载</a>
-                                          }
-                                          <a className="re-upload-a-btn">重新上传</a>
-                                          <a className="delete-a-btn"
-                                            onClick={async () => {
-                                              let approvalGuid = i.approvalGuid;
-                                              const params = {
-                                                userGuid: this.state.userinfo.userGuid,
-                                                materialGuid: approvalGuid
-                                              };
-                                              const isSuccess = await update.deleteMaterial(params);
-                                              // if (_isObject(isSuccess)) {
-                                              //   this._setState(true, isSuccess.message);
-                                              // }
-                                            }}
-                                          >删除</a>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })
-                              }
+                                        <a className="re-upload-a-btn">重新上传</a>
+                                        <a className="delete-a-btn"
+                                           onClick={async () => {
+                                             let approvalGuid = i.approvalGuid;
+                                             const params = {
+                                               userGuid: this.state.userinfo.userGuid,
+                                               materialGuid: approvalGuid
+                                             };
+                                             await update.deleteMaterial(params);
+                                             // if (_isObject(isSuccess)) {
+                                             //   this._setState(true, isSuccess.message);
+                                             // }
+                                           }}
+                                        >删除</a>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            }
                             </tbody>
                           </table>
                         </div>
@@ -1052,182 +1182,322 @@ export default class User extends React.Component<IProps, IUesrState> {
                 </div>
               </div>
             </div>
-            <div className={nextNum === 2 ? "row-right-info" : "row-display"}>
-              <div className="top-right">
-                <ul className="top-ul">
-                  <li className={nextNum === 2 ? "bordr" : "bordr-display"}
-                    onClick={() => this.nextMenuNum(2, null)}><a>个人信息</a></li>
-                  <li className={nextNum === 3 ? "bordr-two" : "bordr-display"}
-                    onClick={() => this.nextMenuNum(3, 30)}><a>账号安全</a></li>
-                </ul>
+            {realStatus !== 2 ? <div className={type === 2 ? "row-right-info" : "row-display"}>
+                <div className="right-head realname-detail">
+                  <div className="form-group form-detail">
+                    <label>真实姓名:</label>
+                    {personInfo.userRealName}
+                  </div>
+                  <div className="form-group form-detail">
+                    <label>名片上传:</label>
+                    <div className="img-gray">
+                      <img src={personInfo.cardPic} alt=""/>
+                    </div>
+                  </div>
+                  <div className="form-group form-detail">
+                    <label>身份证正反面：</label>
+                    <div className="img-gray">
+                      <img src={personInfo.papersPositivePic} alt=""/>
+                    </div>
+                    <div className="img-gray">
+                      <img src={personInfo.papersPic} alt=""/>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="right-head realname-detail">
-                <div className="img-circle img-nickPick">
-                  <div className="nick_img " style={{ display: this.state.RealName.userpic ? 'block' : 'none' }}>
-                    <img className="fpimgs" src={this.state.RealName.userpic}></img>
+              :
+              <div className={type === 2 ? "row-right-info" : "row-display"}>
+                <div className="right-head realname-detail">
+                  <div className="form-group">
+                    <label>真实姓名<i className="span_imp">*</i></label>
+                    <input type="text" autoComplete="off" className="form-control " name="name" placeholder="填写您的姓名"
+                           value={RealName.userRealName}
+                           onChange={(e) => {
+                             RealName.userRealName = e.target.value;
+                             this.setState({
+                               RealName
+                             });
+                           }}/>
                   </div>
-                  <input type="file" className="btn_nickpic" name="image_file"  accept=".jpg,.jpeg,.png"
-                    style={{ width: "100%", height: "100%", opacity: 0 }} onChange={async (e) => {
-                      await this.uploadImg(e, 'pickGuid', 4, 'userpic');
-                    }} />
-                </div>
-                <p className="right-p">
-                  <label>昵称<span className="span_imp">*</span></label>
-                  <input className="form-control nickName" value={RealName.nikeName} onChange={(e) => {
-                    RealName.nikeName = e.target.value;
-                    this.setState({
-                      RealName: RealName
-                    });
-                  }}>
-                  </input>
-                </p>
-
-                <div className="form-group">
-                  <label>真实姓名<span className="span_imp">*</span></label>
-                  <input type="text" className="form-control" placeholder="填写您的姓名" value={RealName.userRealName}
-                         onChange={(e) => {
-                           RealName.userRealName = e.target.value;
-                           this.setState({
-                             RealName: RealName
-                           });
-                         }}/>
-                </div>
-                <div className="form-group">
-                  <label>公司名称<span className="span_imp">*</span></label>
-                  <div className="antdSlect" id="user_certification_company">
-                    <Select
-                      size={"large"}
-                      showSearch={true}
-                      style={{ width: '100%', display: this.state.RealName['selected']['enter'] ? 'none' : null }}
-                      placeholder="填写公司名称"
-                      defaultValue={[]}
-                      onChange={this.handleChange}
-                      dropdownClassName=""
-                      allowClear={true}
-                      value={RealName.companyname}
-                    >
-                      {children}
-                    </Select>
-                    <input type="text" className="form-control"
-                      style={{ display: this.state.RealName['selected']['enter'] ? null : 'none' }}
-                      value={RealName.companyname}
-                      placeholder="填写公司名称" onChange={(e) => {
-                        RealName.companyname = e.target.value;
-                        this.setState({
-                          RealName: RealName
-                        });
-                      }} />
-                    <div
-                      className={`checkimg  yc_checked_img1 dis_input ${this.state.RealName['selected']['enter'] ? "checkedimg" : null}`}
-                      onClick={() => {
-                        this.multiSelect('enter');
-                      }} />
-                    <div className="checktxt linght40">手动输入</div>
+                  <div className="form-group">
+                    <label>名片上传<span>(请上传的名片清晰可见，不超过10m，格式为：bmp,jpg,png)</span></label>
+                    <div className="upload">
+                      <div className="load">
+                        <img src={RealName.file} alt=""/>
+                        {this.state.RealName.file === "" ? <span>点击上传</span> : ""}
+                        <input type="file" className="btn_file" name="image_file"
+                               style={{ width: "100%", height: "100%", opacity: 0 }} onChange={async (e) => {
+                          await this.uploadImg(e, 'picGuid', 4, 'file');
+                        }}/>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="certification-checking"
-                  style={{ display: this.state.RealName['selected']['enter'] ? null : 'none' }}>
-                  <label>公司性质（可多选）<span className="span_imp">*</span></label>
-                  <div className="check">
-                    <ul>
-                      <li>
-                        <div className={`check-img ${this.state.RealName['selected']['1'] ? 'checkedimg' : null}`}
-                          onClick={() => {
-                            this.multiSelect('1');
-                          }}>
-                        </div>
-                        <div className="checktxt">出品公司</div>
-                      </li>
-                      <li>
-                        <div className={`check-img ${this.state.RealName['selected']['2'] ? 'checkedimg' : null}`}
-                          onClick={() => {
-                            this.multiSelect('2');
-                          }}>
-                        </div>
-                        <div className="checktxt">发行公司</div>
-                      </li>
-                      <li>
-                        <div className={`check-img ${this.state.RealName['selected']['3'] ? 'checkedimg' : null}`}
-                          onClick={() => {
-                            this.multiSelect('3');
-                          }}>
-                        </div>
-                        <div className="checktxt">代理公司</div>
-                      </li>
-                      <li>
-                        <div className={`check-img ${this.state.RealName['selected']['4'] ? 'checkedimg' : null}`}
-                          onClick={() => {
-                            this.multiSelect('4');
-                          }}>
-                        </div>
-                        <div className="checktxt">出版社</div>
-                      </li>
-                      <li>
-                        <div className={`check-img ${this.state.RealName['selected']['5'] ? 'checkedimg' : null}`}
-                          onClick={() => {
-                            this.multiSelect('5');
-                          }}>
-                        </div>
-                        <div className="checktxt">投资公司</div>
-                      </li>
-                      <li>
-                        <div className={`check-img ${this.state.RealName['selected']['6'] ? 'checkedimg' : null}`}
-                          onClick={() => {
-                            this.multiSelect('6');
-                          }}>
-                        </div>
-                        <div className="checktxt">宣发公司</div>
-                      </li>
-                    </ul>
+                  <div className="form-group">
+                    <label>身份证上传<i
+                      className="span_imp">*</i><span>(请上传身份证的正反面，图片清晰可见，每张图片不超过10m，格式为：bmp,jpg,png)</span></label>
+                    <div className="upload">
+                      <div className="load">
+                        <img src={this.state.RealName.cardFile} alt=""/>
+                        {this.state.RealName.cardFile === "" ? <span>点击上传</span> : ""}
+                        <input type="file" className="btn_file" name="image_file" accept=".jpg,.jpeg,.png"
+                               style={{ width: "100%", height: "100%", opacity: 0 }}
+                               onChange={async (e) => {
+                                 await this.uploadImg(e, 'papersPositivePicGuid', 5, 'cardFile');
+                               }}/>
+                        <p>身份证正面</p>
+                      </div>
+                      <div className="load">
+                        <img src={this.state.RealName.cardFanFile} alt=""/>
+                        {this.state.RealName.cardFanFile === "" ? <span>点击上传</span> : ""}
+                        <input type="file" className="btn_file" name="image_file" accept=".jpg,.jpeg,.png"
+                               style={{ width: "100%", height: "100%", opacity: 0 }}
+                               onChange={async (e) => {
+                                 await this.uploadImg(e, 'papersPicGuid', 5, 'cardFanFile');
+                               }}/>
+                        <p>身份证反面</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>担任职务<span className="span_imp">*</span></label>
-                  <input type="text" className="form-control " placeholder="填写您所担任的职务" value={RealName.positions}
-                    onChange={(e) => {
-                      RealName.positions = e.target.value;
-                      this.setState({
-                        RealName: RealName
-                      });
-                    }} />
-                </div>
-
-                <div className="form-group">
-                  <label>个人简介</label>
-                  <textarea className="form-control textarea" value={RealName.dsc} onChange={(e) => {
-                    RealName['dsc'] = e.target.value;
-                    this.setState({
-                      RealName: RealName
-                    });
-                  }}>
-                  </textarea>
-                </div>
-                <div className="form-group">
-                  <div className="user_btn_primary">
-                    <button className="btn btn-primary" onClick={() => {
-                      this.saveUserInformation({});
-                    }}>保存
+                  <div className="user_btn_primary ">
+                    <button className="btn btn-primary" onClick={async () => {
+                      await this.certification();
+                      await user.getUserInfo({ userGuid });
+                    }}>提交审核
+                    </button>
+                    <button className="btn btn-default" onClick={async () => {
+                      await this.clearCerfitication();
+                    }}>重置
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className={nextNum === 3 ? "row-right-admin" : "row-display"}>
-              <div className="top-right">
-                {/* <ul className="top-ul">
-                  <li className={this.state.btnNum === 1 ? "bordr" : "bordr-display"}
-                      onClick={() => this.setMenuNum(1)}><a>个人信息</a></li>
-                  <li className={this.state.btnNum === 2 ? "bordr-two" : "bordr-display"}
-                      onClick={() => this.setMenuNum(2)}><a>账号安全</a></li>
-                </ul> */}
+            }
+            {
+              companyInfo.realStatus !== 3 &&
+              <div className={type === 4 ? "row-right-info" : "row-display"}>
+                <div className="right-head realname-detail">
+                  <div className="form-group">
+                    <label>上传企业LOGO <i className="span_imp">*</i>
+                      <span>(请上传的logo清晰可见，不超过10m，格式为：bmp,jpg,png)</span>
+                    </label>
+                    <div className="upload">
+                      <div className="load">
+                        <img src={companyData.logoPic} alt=""/>
+                        {companyData.logoPic === "" ? <span>点击上传</span> : ""}
+                        <input type="file" className="btn_file"
+                               style={{ width: "100%", height: "100%", opacity: 0 }}
+                               onChange={async (e) => {
+                                 await this.uploadImg(e, 'ipPicGuid', 3, 'logoPic');
+                               }}/>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>公司名称<i className="span_imp">*</i></label>
+                    <input type="text" autoComplete="off" className="form-control"
+                           value={companyData.companyName}
+                           placeholder="填写公司名称"
+                           onChange={async (e) => {
+                             await this.getInputValue("companyName", e);
+                           }}/>
+                  </div>
+                  <div className="form-group company-type">
+                    <label>公司性质(可多选)<i className="span_imp">*</i></label>
+                    <div className="check">
+                      <ul>
+                        {companyData.companySelected && companyData.companySelected.map((item, index) => {
+                          const { companyData: { companyType: tmp } } = this.state;
+                          let checkboxClicked = !!_find(tmp, val => item.id === Number(val)) ? "checkedimg" : "";
+                          return (
+                            <li key={index}>
+                              <div className={`check-img ${checkboxClicked}`} onClick={async () => {
+                                let companyType = companyData.companyType;
+                                if (!_find(companyType, val => item.id === Number(val))) {
+                                  companyType.push(item.id);
+                                } else {
+                                  const idx = companyType.findIndex(o => Number(o) === item.id);
+                                  delete companyType[idx];
+                                }
+                                this.setState({
+                                  companyData: { ...companyData, companyType }
+                                });
+                                // await user.setStatus(companyType);
+                              }}/>
+                              <div className="checktxt">{item.name}</div>
+                            </li>
+                          );
+                        })
+                        }
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="form-group ">
+                    <label>公司国别</label>
+                    <div className="antdSlect">
+                      {
+                        companyData.companyCountries &&
+                        <Select
+                          showSearch
+                          style={{ width: 200 }}
+                          placeholder="请选择公司国别"
+                          optionFilterProp="children"
+                          defaultValue={companyData.companyCountries}
+                          onChange={async (value: string) => {
+                            companyData['companyCountries'] = value;
+                            this.setState({
+                              companyData,
+                            });
+                          }}
+                          filterOption={(input, option) =>
+                            typeof option.props.children === "string" ? option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0 : ""
+                          }
+                        >
+                          {children}
+                        </Select>
+                      }
+                      {
+                        _isEmpty(companyData.companyCountries) && <Select
+                          showSearch
+                          style={{ width: 200 }}
+                          placeholder="请选择公司国别"
+                          optionFilterProp="children"
+                          onChange={async (value: string) => {
+                            companyData['companyCountries'] = value;
+                            this.setState({
+                              companyData,
+                            });
+                          }}
+                          filterOption={(input, option) =>
+                            typeof option.props.children === "string" ? option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0 : ""
+                          }
+                        >
+                          {children}
+                        </Select>
+                      }
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>营业执照<i className="span_imp">*</i>
+                      <span>(请上传的logo清晰可见，不超过10m，格式为: bmp,jpg,png)</span>
+                    </label>
+                    <div className="upload">
+                      <div className="load">
+                        <img src={companyData.businessLicense} alt=""/>
+                        {companyData.businessLicense === "" ? <span>点击上传</span> : ""}
+                        <input type="file" className="btn_file"
+                               style={{ width: "100%", height: "100%", opacity: 0 }}
+                               onChange={async (e) => {
+                                 await this.uploadImg(e, 'businessLicenseGuid', 7, 'businessLicense');
+                               }}/>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>联系电话</label>
+                    <input type="text" autoComplete="off" className="form-control"
+                           value={companyData.companyTelephone}
+                           onChange={async (e) => {
+                             await this.getInputValue("companyTelephone", e);
+                           }}
+                           placeholder="请输入联系电话"/>
+                  </div>
+                  <div className="form-group">
+                    <label>联系邮箱</label>
+                    <input type="text" autoComplete="off" className="form-control"
+                           value={companyData.companyMailbox}
+                           onChange={async (e) => {
+                             await this.getInputValue("companyMailbox", e);
+                           }}
+                           placeholder="请输入联系邮箱"/>
+                  </div>
+                  <div className="form-group">
+                    <label>公司地址</label>
+                    <input type="text" autoComplete="off" className="form-control"
+                           value={companyData.companyAddress}
+                           onChange={async (e) => {
+                             await this.getInputValue("companyAddress", e);
+                           }}
+                           placeholder="请输入公司地址"/>
+                  </div>
+                  <div className="form-group">
+                    <label>公司简介</label>
+                    <textarea className="form-control textarea" placeholder="写点什么吧"
+                              value={companyData.companyDesc}
+                              onChange={async (e) => {
+                                await this.getInputValue("companyDesc", e);
+                              }}/>
+                  </div>
+                  {/*<div className="form-group">
+                  <label>企业主页编辑权限关联账号</label>
+                  <input type="text" placeholder="请输入关联账号，如有多个请以； 进行区分" className="form-control"/>
+                </div>*/}
 
-                <ul className="top-ul">
-                  <li className={nextNum === 2 ? "bordr" : "bordr-display"}
-                      onClick={() => this.nextMenuNum(2, null)}><a>个人信息</a></li>
-                  <li className={nextNum === 3 ? "bordr-two" : "bordr-display"}
-                      onClick={() => this.nextMenuNum(3, 30)}><a>账号安全</a></li>
-                </ul>
+                </div>
+                <div className="form-group">
+                  <div className="user_btn_primary">
+                    <button className="btn btn-primary" onClick={async () => {
+                      await this.companyCertification();
+                    }}>提交审核
+                    </button>
+                    <button className="btn btn-default" onClick={async () => {
+                      await this.clearCompanyCertification();
+                    }}>重置
+                    </button>
+                  </div>
+                </div>
+              </div>}
+            {companyInfo.realStatus === 3 &&
+            <div className={type === 4 ? "row-right-info" : "row-display"}>
+              <div className="right-head realname-detail">
+                <div className="form-group form-detail">
+                  <label>上传企业LOGO:</label>
+                  <div className="img-gray">
+                    <img src={companyInfo.picUrl} alt=""/>
+                  </div>
+                </div>
+                <div className="form-group form-detail">
+                  <label>公司名称:</label>
+                  {companyInfo.companyName}
+                </div>
+                <div className="form-group form-detail">
+                  <label>公司性质:</label>
+                  {companyInfo.companyType.split(',').map((item, index) => {
+                    return (
+                      <span key={index}>{companyTypeKV[item]}/</span>
+                    );
+                  })}
+                </div>
+                <div className="form-group form-detail">
+                  <label>公司国别:</label>
+                  {companyInfo.companyCountries}
+                </div>
+                <div className="form-group form-detail">
+                  <label>营业执照:</label>
+                  <div className="img-gray">
+                    <img src={companyInfo.businessLicense} alt=""/>
+                  </div>
+                </div>
+                <div className="form-group form-detail">
+                  <label>联系电话:</label>
+                  {companyInfo.companyTelephone}
+                </div>
+                <div className="form-group form-detail">
+                  <label>联系邮箱:</label>
+                  {companyInfo.companyMailbox}
+                </div>
+                <div className="form-group form-detail">
+                  <label>公司地址:</label>
+                  {companyInfo.companyAddress}
+                </div>
+                <div className="form-group form-detail">
+                  <label>公司简介:</label>
+                  {companyInfo.companyDesc}
+                </div>
               </div>
+            </div>}
+            <div className={type === 3 ? "row-right-admin" : "row-display"}>
               <div className="box-style">
 
                 {userinfo.email ? (
@@ -1243,18 +1513,18 @@ export default class User extends React.Component<IProps, IUesrState> {
                     </div>
                   </div>
                 ) : (
-                    <div className="email-val">
-                      <div className="first-style">
-                        邮箱账号
+                  <div className="email-val">
+                    <div className="first-style">
+                      邮箱账号
                     </div>
-                      <div className="last-style">
-                        未绑定邮箱
+                    <div className="last-style">
+                      未绑定邮箱
                     </div>
-                      <div className="user-btn">
-                        <button className="btn btn-primary" onClick={() => this.setchildNum(3)}>绑定</button>
-                      </div>
+                    <div className="user-btn">
+                      <button className="btn btn-primary" onClick={() => this.setchildNum(3)}>绑定</button>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {userinfo.mobile ? (
                   <div className="phone-num">
@@ -1269,18 +1539,18 @@ export default class User extends React.Component<IProps, IUesrState> {
                     </div>
                   </div>
                 ) : (
-                    <div className="phone-num">
-                      <div className="first-style">
-                        手机账号
+                  <div className="phone-num">
+                    <div className="first-style">
+                      手机账号
                     </div>
-                      <div className="last-style">
-                        未绑定手机号
+                    <div className="last-style">
+                      未绑定手机号
                     </div>
-                      <div className="user-btn">
-                        <button className="btn btn-primary" onClick={() => this.setchildNum(2)}>绑定</button>
-                      </div>
+                    <div className="user-btn">
+                      <button className="btn btn-primary" onClick={() => this.setchildNum(2)}>绑定</button>
                     </div>
-                  )}
+                  </div>
+                )}
                 <div className="email-val mt58">
                   <div className="first-style">
                     登录密码
@@ -1292,35 +1562,9 @@ export default class User extends React.Component<IProps, IUesrState> {
                     <button className="btn btn-primary" onClick={() => this.setchildNum(1)}>更改</button>
                   </div>
                 </div>
-                <div className="phone-num mt58">
-                  <div className="first-style">
-                    实名认证
-                  </div>
-                  <div className="last-style">
-                    完成实名认证，享受更多会员福利
-                  </div>
-                  <div className="user-btn">
-                    <button className="btn btn-primary" onClick={() => this.setchildNum(4)}>去认证</button>
-                  </div>
-                </div>
-                {/* <div className="pass-num"> */}
               </div>
             </div>
-            <div className={this.state.nextNum === 30 ? "row-right-admin" : "row-display"}>
-              <div className="top-right">
-                {/* <ul className="top-ul">
-                  <li className={this.state.btnNum === 1 ? "bordr" : "bordr-display"}
-                      onClick={() => this.setMenuNum(1)}><a>个人信息</a></li>
-                  <li className={this.state.btnNum === 2 ? "bordr-two" : "bordr-display"}
-                      onClick={() => this.setMenuNum(2)}><a>账号安全</a></li>
-                </ul> */}
-                <ul className="top-ul">
-                  <li className={nextNum === 2 ? "bordr" : "bordr-display"}
-                      onClick={() => this.nextMenuNum(2, null)}><a>个人信息</a></li>
-                  <li className={nextNum === 30 ? "bordr-two" : "bordr-display"}
-                      onClick={() => this.nextMenuNum(3, 30)}><a>账号安全</a></li>
-                </ul>
-              </div>
+            <div className={type === 30 ? "row-right-admin" : "row-display"}>
               <div className="box-style">
                 <div className={this.state.childNum === 1 ? "password-detail" : "row-display"}>
                   <div className="col-sm-8 box_center_style" id="moidify_password">
@@ -1329,7 +1573,7 @@ export default class User extends React.Component<IProps, IUesrState> {
                       <i className={iconShow ? "icon iconfont  icon-ic_block" : "icon iconfont  icon-ic_hidden"}
                          onClick={() => {
                            this.setState({ iconShow: !iconShow });
-                         }}></i>
+                         }}/>
                       <input type={iconShow ? 'text' : 'password'} className="form-control " id="password"
                              placeholder="输入原先密码"
                              value={this.state.UpdataPassword.oldUserPass}
@@ -1339,15 +1583,16 @@ export default class User extends React.Component<IProps, IUesrState> {
                              onChange={(e) => {
                                UpdataPassword.oldUserPass = e.target.value;
                                this.setState({
-                                 UpdataPassword: UpdataPassword
+                                 UpdataPassword
                                });
                              }}/>
                     </div>
                     <div className="form-group yc_relative">
-                      <i className={iconShowNext ? "icon iconfont  icon-ic_block" : "icon iconfont  icon-ic_hidden"}
-                         onClick={() => {
-                           this.setState({ iconShowNext: !iconShowNext });
-                         }}></i>
+                      <i
+                        className={iconShowNext ? "icon iconfont  icon-ic_block" : "icon iconfont  icon-ic_hidden"}
+                        onClick={() => {
+                          this.setState({ iconShowNext: !iconShowNext });
+                        }}/>
                       <input type={iconShowNext ? 'text' : 'password'} className="form-control " id="pwd_first"
                              placeholder="输入至少8位的新密码"
                              value={this.state.UpdataPassword.userPass}
@@ -1357,7 +1602,7 @@ export default class User extends React.Component<IProps, IUesrState> {
                              onChange={(e) => {
                                UpdataPassword.userPass = e.target.value;
                                this.setState({
-                                 UpdataPassword: UpdataPassword
+                                 UpdataPassword
                                });
                              }}/>
                     </div>
@@ -1370,7 +1615,7 @@ export default class User extends React.Component<IProps, IUesrState> {
                              onChange={(e) => {
                                UpdataPassword.userPassAgain = e.target.value;
                                this.setState({
-                                 UpdataPassword: UpdataPassword
+                                 UpdataPassword
                                });
                              }}/>
                     </div>
@@ -1412,7 +1657,7 @@ export default class User extends React.Component<IProps, IUesrState> {
                              }}/>
                     </div>
                     <div className="form-group">
-                      {this.state.Verification.type == 'editPhone' ? (
+                      {this.state.Verification.type === 'editPhone' ? (
                         <div className="input-group-addon disabled" id="btn_phone_code">
                           {this.state.Verification.number}s后重新发送
                         </div>) : (
@@ -1468,7 +1713,7 @@ export default class User extends React.Component<IProps, IUesrState> {
                     </div>
                     <div className="form-group">
 
-                      {this.state.Verification.type == 'editEmail' ? (
+                      {this.state.Verification.type === 'editEmail' ? (
                         <div className="input-group-addon disabled" id="btn_phone_code">
                           {this.state.Verification.number}s后重新发送
                         </div>) : (
@@ -1502,109 +1747,32 @@ export default class User extends React.Component<IProps, IUesrState> {
                     </div>
                   </div>
                 </div>
-                <div className={this.state.childNum === 4 ? "realname-detail" : "row-display"}>
-                  <div className="col-sm-8 " id="certification">
-                    {/* <div className="form-group">
-                      <label>联系邮箱</label>
-                      <input type="text" className="form-control"   placeholder="填写您的联系邮箱" onChange={(e) => { this.state.RealName['email'] = e.target.value }}  />
-                    </div>
-                    <div className="form-group">
-                    <div className="input-group-addon" id="user_certification_emailbtn_get_code" onClick={()=>{this.EditCode({type:'editinformation'})}}>
-                            获取验证码
-                    </div>
-                      <input type="text" className="form-control right_box" id="user_certification_email_code" onChange={(e) => { this.state.RealName['code'] = e.target.value }}
-                        placeholder="填写邮件收到的6位验证码" />
-                    </div> */}
-                    <div className="form-group">
-                      <label>真实姓名<span className="span_imp">*</span></label>
-                      <input type="text" className="form-control " id="user_certification_name" placeholder="填写您的姓名"
-                             value={this.state.RealName.realname}
-                             onChange={(e) => {
-                               RealName.realname = e.target.value;
-                               this.setState({
-                                 RealName: RealName
-                               });
-                             }}/>
-                    </div>
-                    <div className="form-group">
-                      <label>名片上传</label>
-                      <div className="upload">
-                        <form key="formonly">
-                          <div className="load" id="upload">
-                            <div className="card_img" style={{ display: this.state.RealName.file ? 'block' : 'none' }}>
-                              <img className="fpimgs" src={this.state.RealName.file}></img></div>
-                            <input type="text" defaultValue="pc" name="device_type" style={{ display: 'none' }}/>
-                            <input type="text" defaultValue="300,300" name="thumbwh" style={{ display: 'none' }}/>
-                            <input type="text" defaultValue="" name="token" style={{ display: 'none' }}/>
-                            <input type="text" defaultValue="company_card" name="upload_type"
-                                   style={{ display: 'none' }}/>
-                            <input type="text" defaultValue="1" name="nothumb" style={{ display: 'none' }}/>
-                            <input type="file" className="btn_file" name="image_file"
-                                   style={{ width: "100%", height: "100%", opacity: 0 }} onChange={async (e) => {
-                              await this.uploadImg(e, 'picGuid', 4, 'file');
-                            }}/>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>证件照上传</label>
-                      <div className="upload">
-                        <form key="formonly">
-                          <div className="load" id="upload">
-                            {/* <div className="card_img"><img className="fpimgs" src=""> </img></div> */}
-                            <div className="card_img"
-                              style={{ display: this.state.RealName.cardFile ? 'block' : 'none' }}><img
-                                className="fpimgs" src={this.state.RealName.cardFile}></img></div>
-                            <input type="text" defaultValue="pc" name="device_type" style={{ display: 'none' }} />
-                            <input type="text" defaultValue="300,300" name="thumbwh" style={{ display: 'none' }} />
-                            <input type="text" defaultValue="" name="token" style={{ display: 'none' }} />
-                            <input type="text" defaultValue="company_card" name="upload_type"
-                              style={{ display: 'none' }} />
-                            <input type="text" defaultValue="1" name="nothumb" style={{ display: 'none' }} />
-                            <input type="file" id="btn_file" name="image_file" accept=".jpg,.jpeg,.png"
-                              style={{ width: "100%", height: "100%", opacity: 0 }}
-                              onChange={async (e) => {
-                                await this.uploadImg(e, 'papersPicGuid', 5, 'cardFile');
-                              }} />
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <div className="user_btn_primary ">
-                        <button className="btn btn-primary" onClick={() => {
-                          this.editinformation({});
-                        }}>确定
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
         {this.state.show &&
-          <Toast
-            onClose={() => {
-              this.setState({ show: false });
-            }}
-            duration={2}
-            message={this.state.message}
-          />}
+        <Toast
+          onClose={() => {
+            this.setState({ show: false });
+          }}
+          duration={2}
+          message={this.state.message}
+        />}
 
-        {/* {this.state.show && <Alert message={this.state.message}
-                                   onClose={() => {
-                                     this.setState({ show: false });
-                                   }}
-                                   onSubmit={() => {
-                                     // console.log(this);
-                                     // this.props.history.push('/login');
-                                   }}
+        {this.state.alertShow &&
+        <Alert message={this.state.alertMessage}
+               onClose={() => {
+                 this.setState({ alertShow: false });
+               }}
+               onSubmit={() => {
+                 this.setState({ alertShow: false });
+                 // console.log(this);
+                 // this.props.history.push('/login');
+               }}
         />
-        } */}
-        <Footer data={footerNav} />
+        }
+        <Footer data={footerNav}/>
       </div>
     );
   }

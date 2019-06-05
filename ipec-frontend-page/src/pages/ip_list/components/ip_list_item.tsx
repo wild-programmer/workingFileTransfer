@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import default_img from "@assets/images/default_img_item.png";
 import default_img_ip from "@assets/images/default_img_ip.png";
+import renzheng from "@assets/images/renzheng.png";
 
 const number_k_v = {
   "IP形象": 1,
@@ -28,7 +29,7 @@ export default class IpListItem extends React.Component<IpListItemProps> {
 
     return (
       <div
-        className="content-container flex-column ">
+        className="content-container flex-column "> 
         <div className="ip-s flex-row justify-content-between flex-wrap">
           <div className="ip-item-type">
             <img src={item.ipTypePicUrl || default_img_ip} alt=""/>
@@ -45,8 +46,9 @@ export default class IpListItem extends React.Component<IpListItemProps> {
               const { ipTypeName }: { ipTypeName: string } = val;
               let sub_type = ipTypeName && ipTypeName.split(",");
               return (
-                <Link to={`/detail/${number_k_v[val.ipType]}/${val.ipid}`} key={val.id} className="ip-item flex-column align-items-center">
-                  <img className="ip-item-img" src={val.ipPic || default_img_ip} alt=""/>
+                <Link to={`/detail/${number_k_v[val.ipType]}/${val.ipid}`} key={val.id} className="ip-item flex-column align-items-center ip-item-relative">
+                  <img className="ip-item-img" src={val.ipPic || default_img_ip} alt=""/> 
+                  {val.ipIsAuthenticated === 3 &&  <img src={renzheng} className="ip-item-certification" alt=""/>} 
                   <span>{`${val.ipName}`}</span>
                   <div className="ip-item-sub-type justify-content-around align-items-center flex-wrap">
                     {sub_type && sub_type.map((sub: string, idx: number) =>

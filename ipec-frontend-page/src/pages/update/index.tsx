@@ -3,9 +3,14 @@ import "@assets/scss/update.scss";
 import "@assets/scss/model.scss";
 import Header from "@components/header";
 import Footer from "@components/footer";
+import { upload, getAuthorize } from '@utils/api';
 import default_img from "@assets/images/default_img_item.png";
+import ic_upload from "@assets/images/update/ic_upload.svg";
+import shouqi from "@assets/images/update/shouqi.svg";
+import xiala from "@assets/images/update/xiala.svg";
 import _find from "lodash/find";
 import _isEmpty from 'lodash/isEmpty';
+import _isString from 'lodash/isString';
 import {
   Cultural,
   Movie,
@@ -16,7 +21,11 @@ import {
   Avatar,
   Book,
   People,
-  Fiction
+  Common,
+  Fiction,
+  Wangeditor,
+  Upload,
+  Rule,
 } from "@pages/update/components";
 import { inject, observer } from "mobx-react";
 import { createIp, EditIp, savePic, EditIpCheckStatus } from "@utils/api";
@@ -26,7 +35,7 @@ import _isObject from "lodash/isObject";
 import _isArray from "lodash/isArray";
 import moment from 'moment';
 import { toJS } from "mobx";
-import { number } from 'prop-types';
+import { number, any } from 'prop-types';
 
 interface IUpdateState {
   pub: {
@@ -34,23 +43,35 @@ interface IUpdateState {
     ipTypeSuperiorNumber: string,
     ipTypeNumber: any[],
     ipLocation: string,
+    countryNames: string,
+    countryTypes: string,
     ipDesc: string,
     ipFormNumber: string,
     ipPicGuid: string,
+    typeslect: string
   };
+  isReading: Boolean;
+  ipMaterialGuidList: Array<any>; //商务资料
+  copyrightAgent: object,//代理协议文件
+  copyrightCertificateGuid: object,//版权证明文件
+  ownershipGuid: object,//IP所有权证明文件 //经济合同 
   sub: {};
   show: boolean;
   message: string;
   uploadShow: boolean;
+
   pic_img: string;
   result: string;
   ipid: number;
   addIpState: boolean;
   remark: Array<any>;
-  data: object;
+  showDate: object;
+  isOn: boolean;
+  isCaseOn: boolean;
+  fileType: object;
 
+  ruleShow:Boolean;
 }
-
 // 组件名
 const componentKeyValues = {
   "电影": Movie,
@@ -103,27 +124,51 @@ export default class Update extends React.Component<IProps, IUpdateState> {
   constructor(props) {
     super(props);
     this.state = {
-      pub: {
+      pub: { //所有类别公共的数据
         ipName: "",
         ipTypeSuperiorNumber: '',
         ipLocation: '',
+        countryNames: '',
+        countryTypes: '',
         ipTypeNumber: [],
         ipDesc: "",
         ipFormNumber: '',
-        ipPicGuid: ''
+        ipPicGuid: '',
+        typeslect: ''
       },
-      sub: {},
+      ipMaterialGuidList: [
+      ],
+      copyrightAgent: {
+        guid: '',
+        name: '',
+      },//代理协议文件
+      copyrightCertificateGuid: {
+        guid: '',
+        name: '',
+      },//版权证明文件
+      ownershipGuid: {
+        guid: '',
+        name: '',
+      },//IP所有权证明文件 //经济合同 
+      fileType: {
+        type: null,
+        text: '',
+      },
+      isReading: false,
+      isOn: false,
+      isCaseOn: false,
+      sub: {},//专属于大类别的数据 
       show: false,
       message: "",
       uploadShow: false,
+      ruleShow: false,
       pic_img: "",
       result: "",
       ipid: 0,
       addIpState: false,
       remark: [],
-      data: {},
+      showDate: {},
     };
-
   }
 
   //
@@ -140,18 +185,22 @@ export default class Update extends React.Component<IProps, IUpdateState> {
 
   async componentDidMount() {
     const { update, nav_store } = this.props;
+    const { updateList, } = update;
+    const { userGuid } = JSON.parse(sessionStorage.getItem("user"));
     await nav_store.navList();
     await update.ipTypeList();
+    await update.getlistMainType();
     let { id, ipTypeNumber }: any = this.props.match.params;
-    const params = { ipid: parseInt(id), ipTypeNumber: parseInt(ipTypeNumber) };
-
+    const params = { ipid: parseInt(id), ipTypeNumber: parseInt(ipTypeNumber),userGuid:userGuid };
+    console.log(ipTypeNumber);
     if (id) {
       /**
        * 基本信息获取 getUpdateDetail
        */
       await update.getUpdateDetail(params);
-      await update.getDownload({ ipid: id });
+      await update.getDownload({ ipid: id }); 
       const tmp = toJS(update.updateList);
+     
       if (!_isEmpty(tmp)) {
         const type_array = this._processSubType(tmp.ipTypeNumber);
         const location = tmp.ipLocation;
@@ -172,11 +221,12 @@ export default class Update extends React.Component<IProps, IUpdateState> {
         };
         this.setState({ pub, sub });
       }
+
     } else {
-      const { userGuid } = JSON.parse(sessionStorage.getItem("user"));
-      await update.setStatus({ userGuid });
+      await update.setStatus({ userGuid });  
     }
   }
+
 
   private process(list: any[]) {
     let { pub: { ipTypeSuperiorNumber } } = this.state;
@@ -189,15 +239,32 @@ export default class Update extends React.Component<IProps, IUpdateState> {
   private processKV(typeList: any, types: object) {
     let tmp = {};
     if (!!typeList) {
+      //想要的效果 找到 1对应后台类型 是不是电影 如果是
       typeList.forEach((item: any) => {
-        tmp[item.ipTypeNumber] = types[item.type];
+        // console.log("item.ipTypeNumber"+item.ipTypeNumber) //后台对应的类别
+        // console.log("item.type"+item.type) //后台对应类别 的汉字名称
+        // console.log(types) 
+        tmp[item.ipTypeNumber] = this.isNullObj(types) ? item.type : types[item.type];
       });
     }
     return tmp;
   }
+  isNullObj(obj: object) {
+    var arr = Object.keys(obj);
+    return arr.length == 0
+  }
+  async getdown (){
 
+  }
   private callback = (params: any) => {
-    this.setState({ sub: { ...this.state.sub, ...params } });
+    if(params.businessList){
+      let { id }: any = this.props.match.params;
+      this.props.update.getDownload({ ipid: id }); 
+    }else{
+       const { updateList } = this.props.update;
+        this.setState({ sub: { ...this.state.sub, ...params } });
+        this.props.update.setStatus({ ...params })
+    }
   };
 
   // async callback(params: any) {
@@ -250,6 +317,22 @@ export default class Update extends React.Component<IProps, IUpdateState> {
     });
   }
 
+  async clearstore() {
+    await this.props.update.doRest();
+    let { pub, pub: { ipTypeSuperiorNumber } } = this.state;
+    if (ipTypeSuperiorNumber) pub['clear'] = true;
+    this.setState({
+      pub: {
+        ...pub,
+      },
+      ipMaterialGuidList: [],
+      copyrightAgent: { guid: '', name: '', },
+      copyrightCertificateGuid: { guid: '', name: '', },
+      ownershipGuid: { guid: '', name: '', },
+    })
+  }
+
+
   /**
    * 上传图片
    * @param e
@@ -293,25 +376,130 @@ export default class Update extends React.Component<IProps, IUpdateState> {
    */
   async addIp(apiType) {
     const params = toJS(this.props.update.updateList);
-    console.log(params);
+    let _params = params; 
     if (params.ipName === "") {
       this._setState(true, "填写IP公认的名称不能为空");
+      return
     } else if (params.ipTypeSuperiorNumber === "") {
-      this._setState(true, "IP类型不能为空");
+      this._setState(true, "IP分类不能为空");
       // 类型下的具体的分类 还需判断
-    } else if (params.ipLocation === "" && params.ipTypeSuperiorNumber !== 3 && params.ipTypeSuperiorNumber !== 4) {
-      this._setState(true, "国家地区不能为空");
-    } else {
-      const { errorCode, result }: any = await createIp(apiType, params);
-      if (errorCode === '200' && result === true) {
-        this.setState({
-          addIpState: true,
-          message: '添加成功'
-        });
-      }
+      return
+    }
+    switch (apiType) {
+      case 'avatar':
+          if(this.screening(params) ) {
+            if (params.owner == '') {
+              this._setState(true, "版权方不能为空");
+              return
+            } 
+            this.joinparam(_params,apiType)
+          }else{
+            return
+          } 
+        break;
+      case 'cultural':           
+          if(this.screening(params) ) {
+            if (params.owner == '') {
+              this._setState(true, "版权方不能为空");
+              return
+            } 
+            this.joinparam(_params,apiType)
+          }else{
+            return
+          } 
+        break;
+      case 'tvserial':
+          if(this.screening(params) ) {
+            this.joinparam(_params,apiType)
+          }else{
+            return
+          } 
+        break;
+      case 'movie':
+          if(this.screening(params) ) {
+            this.joinparam(_params,apiType)
+          }else{
+            return
+          } 
+        break;
+      case 'Variety':
+          if(this.screening(params) ) {
+            this.joinparam(_params,apiType)
+          }else{
+            return
+          } 
+        break;
+      case 'people':
+        if (params.ipTypeNumber == '') {
+          this._setState(true, "IP类型不能为空");
+          return
+        } else if (params.nationality == '') {
+          this._setState(true, "国籍不能为空");
+          return
+        }  else if (params.profession == undefined || params.profession  == '') {
+          this._setState(true, "职业不能为空");
+          return
+        } else if (params.nationality==undefined || params.nationality  == '') {
+          this._setState(true, "国籍不能为空");
+          return
+        }  else {
+          this.joinparam(_params,apiType)
+        }
+        break;
+      default:
+        return
+    } 
+    const { errorCode, result }: any = await createIp(apiType, params);
+    if (errorCode === '200' && result === true) {
+      this.setState({
+        addIpState: true,
+        message: '添加成功'
+      });
     }
   }
+  //提交时筛选参数
+  screening = (params)=>{
+    if (params.ipTypeNumber == '') {
+      this._setState(true, "IP类型不能为空");
+      return false
+    } else if (params.countryTypes === '' || params.countryNames === '') {
+      this._setState(true, "国家地区不能为空");
+      return false
+    } else{
+      return true
+    }
+  }
+  //提交时格式化参数
+  joinparam = (_params,apiType) =>{
+    const {copyrightAgent ,copyrightCertificateGuid,ownershipGuid,ipMaterialGuidList} = this.state;
+    if(_params.authorizedLocation){
+       _params.authorizedLocation = _params.authorizedLocation.join('/');
+    }
+   if(_params.authorizedType){
+      _params.authorizedType = _params.authorizedType.join('/');
+   }
+   if(_params.grantedType){
+     _params.grantedType = _params.grantedType.join('/');
+   }
+    if(_params.intentAuthorization){
+      _params.intentAuthorization = _params.intentAuthorization.join('/'); 
+    }
+    
+    if(apiType == 'people'){
+       _params.ownershipGuid = ownershipGuid['guid'];
+    }else{
+      _params.ownershipGuid = ownershipGuid['guid'];
+      _params.copyrightAgent = copyrightAgent['guid'];
+      _params.copyrightCertificateGuid = copyrightCertificateGuid['guid'];
+    }
+    let guidlist = ipMaterialGuidList.map(val=>{
+      return val.guid;
+    })
+    if(guidlist) _params.ipMaterialGuidList = guidlist.join(',') 
 
+    let user = sessionStorage.getItem('user');
+    _params.userGuid = JSON.parse(user).userGuid; 
+  }
   /**
    * 编辑ip
    * modifyContent json  变化的数据 每一个类型不一样  参数不一样
@@ -362,50 +550,89 @@ export default class Update extends React.Component<IProps, IUpdateState> {
     }
   }
 
+  setPub = (obj) => {
+    this.setState({ pub: { ...obj } });
+  }
+  setipMaterial = (obj) => {
+    let { ipMaterialGuidList } = this.state;
+    ipMaterialGuidList.push(obj);
+    this.setState({ ipMaterialGuidList: ipMaterialGuidList }); 
+  }
+  setotherInput = (obj) => {
+    this.setState(obj);
+  }
+
   _processSubType = (type: string) => {
     if (!_isEmpty(type)) {
       return type.split(',')
         .filter(str => !_isEmpty(str));
     }
   };
-
+  
+  componentWillUpdate(nextProps: Readonly<IProps>, nextState: Readonly<IUpdateState>, nextContext: any):void{
+   
+  }
   render() {
     let { nav_store, update } = this.props;
     let { headerNav, footerNav } = nav_store;
-    let { typeList, subTypeList, locationList, modalityList, updateList, businessList } = update;
+    let { typeList, typeListTop, subTypeList, locationList, modalityList, updateList, businessList } = update;
     subTypeList = toJS(subTypeList);
     subTypeList = this.process(subTypeList);
     locationList = this.process(locationList);
     locationList = toJS(locationList);
-
     modalityList = this.process(modalityList);
     modalityList = toJS(modalityList);
-
-    let types = this.processKV(typeList, componentKeyValues);
-    let apiNames = this.processKV(typeList, nameKeyValues);
-    let type = this.state.pub.ipTypeSuperiorNumber;
-    const Component = types[type];
-    const apiType = apiNames[type];
-    const { show, message } = this.state;
+    let types = this.processKV(typeList, componentKeyValues); //返回每个类别对应的组建
+    let apiNames = this.processKV(typeList, nameKeyValues);//返回每个类别对应的接口
+    let ipNames = this.processKV(typeList, {});//返回后台id对应的中文名称  
+    let type = this.state.pub.ipTypeSuperiorNumber; //获取当前的类别
+    const Component = types[type]; //当前组建    
+    const apiType = apiNames[type];//当前接口
+    const { show, message, pic_img, addIpState, uploadShow, ruleShow,ipMaterialGuidList, fileType } = this.state;
     let { id }: any = this.props.match.params;
-    const { uploadShow, pic_img, addIpState } = this.state;
     let user = sessionStorage.getItem('user');
-    let userGuid = JSON.parse(user).userGuid;
-    const { pub: { ipName, ipTypeSuperiorNumber, ipTypeNumber, ipLocation, ipDesc, ipFormNumber } } = this.state;
+    let userGuid = JSON.parse(user).userGuid;  
+    const { pub, pub: { ipName, ipTypeSuperiorNumber, ipTypeNumber, ipLocation, ipDesc, ipFormNumber }, isOn, isCaseOn } = this.state;
     let { iCheckStatus }: any = this.props.match.params;
-
+    console.log("pub@")
+    console.log(pub)
+   
+    // debugger
     return (
       <div className="update-container">
-        <Header data={headerNav} history={this.props.history}/>
+        <Header data={headerNav} history={this.props.history} />
+        {uploadShow &&
+          <UploadFileModel
+            ipid={id}
+            fileType={this.state.fileType}
+            setipMaterial={this.setipMaterial}
+            setotherInput={this.setotherInput}
+            callback={this.callback}
+            onClose={() => {
+              this.setState({
+                uploadShow: false
+              });
+            }
+            } />
+        }
+        <Rule
+          ruleShow={ruleShow}
+           onClose={() => {
+            this.setState({
+              ruleShow: false
+            });
+          }} /> 
         {show &&
-        <Alert
-          message={message}
-          onClose={() => {
-            this.setState({ show: false });
-          }}
-          onSubmit={() => {
-            this.setState({ show: false });
-          }}/>
+          <Alert
+            message={message}
+            onClose={() => {
+              this.setState({ show: false });
+            }}
+            onSubmit={() => {
+              this.setState({ show: false });
+            }} />
+        }
+        
         }
         {
           updateList &&
@@ -415,17 +642,17 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                 {
                   id &&
                   <div className="poster-img-container" style={{ border: 'none' }}>
-                    <img className="poster-img" src={updateList.picUrl || default_img} alt=""/>
+                    <img className="poster-img" src={updateList.picUrl || default_img} alt="" />
                   </div>
                 }
                 {
                   !id &&
                   <div className="poster-img-container">
-                    <img className="poster-img" src={this.state.result} alt=""/>
+                    <img className="poster-img" src={this.state.result} alt="" />
                     <input type="file" onChange={async (e) => {
                       await this.uploadImg(e, 'pic_img');
                     }
-                    }/>
+                    } />
                     {
                       !pic_img && <span>上传封面</span>
                     }
@@ -433,104 +660,133 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                 }
               </div>
             </div>
-
+            {/* 公共部分  */}
             <div className="create-container flex-column">
               <div className="create-right-container flex-column">
                 <div className="form-group flex-column">
                   <label className="input-label">IP名称<span className="label-dot">*</span></label>
                   <input type="text"
-                         onChange={async e => {
-                           const { pub } = this.state;
-                           pub.ipName = e.target.value;
-                           updateList.ipName = e.target.value;
-                           await update.setStatus(updateList);
-                           this.setState({ pub });
-                         }}
-                         value={updateList.ipName || ''}
-                         className="form-control short-width" placeholder="填写IP公认的名称"/>
+                    onChange={async e => {
+                      const { pub } = this.state;
+                      pub.ipName = e.target.value;
+                      updateList.ipName = e.target.value;
+                      await update.setStatus(updateList);
+                      this.setState({ pub });
+                    }}
+                    value={updateList.ipName || ''}
+                    className="form-control short-width backgroundWite" placeholder="填写IP公认的名称" />
                 </div>
 
                 <div className="form-group flex-column">
-                  <label className="input-label">IP类型<span className="label-dot">*</span></label>
+                  {/* IP类型 */}
+                  <label className="input-label">IP分类<span className="label-dot">*</span></label>
                   <div className="radio-group flex-row flex-wrap">
                     {
-                      !id && typeList && typeList.map((item: any) => {
-                        let radioClicked = this.state.pub.ipTypeSuperiorNumber === item.ipTypeNumber ? "radio-selected" : "";
+                      !id && typeListTop && typeListTop.map((item: any) => {
+                        let { pub } = this.state;
+                        let { typeslect } = pub; //用来标记 当前选择的是哪个
+                        let radioClicked = typeslect === item.mainTypeGuid ? "radio-selected" : "";
                         return (
                           <div
-                            key={item.ipTypeNumber}
+                            key={item.mainTypeGuid}
                             className={`ip-radio flex-row align-items-center ${radioClicked}`}
                             onClick={async () => {
-                              let { pub } = this.state;
-                              let { ipTypeNumber, ipTypeSuperiorNumber } = pub;
-                              if (ipTypeSuperiorNumber !== item.ipTypeNumber) {
-                                ipTypeNumber = [];
+                              let _typeslect = '';
+                              if (item.mainTypeGuid !== typeslect) {
+                                _typeslect = item.mainTypeGuid
                               }
                               this.setState({
                                 pub: {
                                   ...pub,
-                                  ipTypeNumber,
-                                  ipTypeSuperiorNumber: item.ipTypeNumber
+                                  typeslect: _typeslect
                                 }
                               });
-                              await update.setStatus({ ipTypeSuperiorNumber: item.ipTypeNumber });
                             }}>
-                            <div className="limit-custom-radio"/>
-                            <span className="radio-text">{item.type || ""}</span>
+                            <div className="limit-custom-radio" />
+                            <span className="radio-text">{item.typeName || ""}</span>
                           </div>
                         );
                       })
-                    }
-                    {
-                      id && typeList && typeList.map((item: any) => {
-                        let radioClicked = parseInt(updateList.ipTypeSuperiorNumber) === item.ipTypeNumber ? "radio-selected" : "";
+                    } {
+                      id && typeListTop && typeListTop.map((item: any) => {
+                        let { pub } = this.state;
+                        let { typeslect } = pub; //用来标记 当前选择的是哪个
+                        typeslect = updateList.mainTypeGuid ;
+                        let radioClicked = typeslect === item.mainTypeGuid ? "radio-selected" : ""; 
+                       
                         return (
                           <div
-                            key={item.ipTypeNumber}
+                            key={item.mainTypeGuid}
                             className={`ip-radio flex-row align-items-center ${radioClicked}`}>
-                            <div className="limit-custom-radio"/>
-                            <span className="radio-text">{item.type || ""}</span>
+                            <div className="limit-custom-radio" />
+                            <span className="radio-text">{item.typeName || ""}</span>
                           </div>
                         );
                       })
                     }
                   </div>
-                  {subTypeList && subTypeList.length > 0 && <div className="sub-type-area">
-                    <div className="sub-type-list flex-fill flex-row flex-wrap">
-                      {subTypeList.map((item: any) => {
-                        if (item.ipTypeNumber !== 0) {
-                          const { pub: { ipTypeNumber: tmp } } = this.state;
-                          let checkboxClicked = !!_find(tmp, val => item.ipTypeNumber === Number(val)) ? "sub-item-selected" : "";
-                          // const { updateList: { ipTypeNumber: tmp } } = update;
-                          // console.log(!!_find(tmp.split(','), val => item.ipTypeNumber === Number(val)));
-                          // let checkboxClicked = !!_find(tmp.split(','), val => item.ipTypeNumber === Number(val)) ? "sub-item-selected" : "";
+                  {
+                    this.state.pub.typeslect && <div className="radio-group flex-row flex-wrap typeBlock">
+                      {
+                        typeList && typeList.map((item: any) => { 
+                          let radioClicked = updateList.ipTypeSuperiorNumber == item.ipTypeNumber ? "radio-selected" : "";
+                          let hide = '';
+                          if(updateList.mainTypeGuid ){ 
+                           hide = updateList.mainTypeGuid  === item.mainTypeGuid ? "" : "hide";
+                          }else{ 
+                             hide = this.state.pub.typeslect === item.mainTypeGuid ? "" : "hide";
+                          }
+                          
                           return (
                             <div
-                              key={item.ipTypeGuid}
+                              key={item.ipTypeNumber}
+                              className={`ip-radio flex-row align-items-center ${hide} ${radioClicked}`}
                               onClick={async () => {
                                 let { pub } = this.state;
-                                let { ipTypeNumber } = pub;
-                                // let ipTypeNumber = tmp.split(',');
-                                if (!_find(ipTypeNumber, val => item.ipTypeNumber === Number(val))) {
-                                  ipTypeNumber.push(item.ipTypeNumber);
-                                } else {
-                                  const idx = ipTypeNumber.findIndex(o => o === item.ipTypeNumber);
-                                  delete ipTypeNumber[idx];
+                                let { ipTypeNumber, ipTypeSuperiorNumber } = pub;
+                                if (ipTypeSuperiorNumber !== item.ipTypeNumber) {
+                                  ipTypeNumber = [];
                                 }
-                                this.setState({ pub: { ...pub, ipTypeNumber } });
-                                await update.setStatus({ ipTypeNumber: ipTypeNumber.join(',') });
-                              }}
-                              className={`sub-item flex-row justify-content-center align-items-center ${checkboxClicked}`}>
-                              <div className="limit-custom-checkbox"/>
-                              <div className="checkbox-text">{item.ipType}</div>
+                                //切换IP分类时 清空子类参数值 
+                                update.clearSub()
+                                if (ipTypeSuperiorNumber) pub['clear'] = true;
+                                this.setState({
+                                  pub: {
+                                    ...pub,
+                                    ipTypeNumber,
+                                    ipTypeSuperiorNumber: item.ipTypeNumber
+                                  }
+                                });
+                                await update.setStatus({ ipTypeSuperiorNumber: item.ipTypeNumber });
+                              }}>
+                              <div className="limit-custom-radio" />
+                              <span className="radio-text">{item.type || ""}</span>
                             </div>
                           );
-                        }
-                      })}
+                        })
+                      }
                     </div>
-                  </div>}
+                  }
+                  {
+                   id && updateList.mainTypeGuid && <div className="radio-group flex-row flex-wrap typeBlock">
+                      {
+                        typeList && typeList.map((item: any) => { 
+                          let radioClicked = updateList.ipTypeSuperiorNumber == item.ipTypeNumber ? "radio-selected" : "";
+                          let hide = updateList.mainTypeGuid  === item.mainTypeGuid ? "" : "hide";                           
+                          return (
+                            <div
+                              key={item.ipTypeNumber}
+                              className={`ip-radio flex-row align-items-center ${hide} ${radioClicked}`} >
+                              <div className="limit-custom-radio" />
+                              <span className="radio-text">{item.type || ""}</span>
+                            </div>
+                          );
+                        })
+                      }
+                    </div>
+                  }
                 </div>
-                {
+                {/* {
                   modalityList && <div className="form-group flex-column">
                     <label className="input-label">形式
                       <span className="label-dot">*</span>
@@ -554,7 +810,7 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                                   await update.setStatus({ ipFormNumber });
                                 }}
                                 className={`sub-item flex-row justify-content-center align-items-center ${checkboxClicked}`}>
-                                <div className="limit-custom-checkbox"/>
+                                <div className="limit-custom-checkbox" />
                                 <div className="checkbox-text">{item.ipType}</div>
                               </div>
                             );
@@ -563,7 +819,7 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                       }
                     </div>
                   </div>
-                }
+                } */}
 
                 {
                   locationList && <div className="form-group flex-column">
@@ -588,7 +844,7 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                                   await update.setStatus({ ipLocation });
                                 }}
                                 className={`sub-item flex-row justify-content-center align-items-center  ${checkboxClicked}`}>
-                                <div className="limit-custom-checkbox"/>
+                                <div className="limit-custom-checkbox" />
                                 <div className="checkbox-text">{item.ipType}</div>
                               </div>
                             );
@@ -598,6 +854,7 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                     </div>
                   </div>
                 }
+
                 <div className="form-group flex-column">
                   <label className="input-label">IP简介</label>
                   <textarea
@@ -610,149 +867,333 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                     className="form-control textarea"
                     placeholder="请在此处填写IP简介..."
                     rows={6}>
-
-                </textarea>
+                  </textarea>
                 </div>
               </div>
 
-              {Component && <Component callback={this.callback} id={id}/>}
+              {Component && <Component callback={this.callback} id={id} pub={pub} setPub={this.setPub} />}
+              {Component && updateList.ipTypeSuperiorNumber != 8 && <Upload callback={this.callback} id={id} pub={pub} setPub={this.setPub} ></Upload>}
+              {Component && <Wangeditor callback={this.callback} id={id} pub={pub} setPub={this.setPub}></Wangeditor>}
+
               {
-                id && <div className="create-right-container flex-column">
+                id && Component && <div className="create-right-container flex-column">
                   <div className="business-header">
                     <div className="business-title">招商资料</div>
                     <button className="btn btn-primary limit-custom-btn" onClick={() => {
-                      this.setState({
-                        uploadShow: true
-                      });
+                        this.setState({
+                          uploadShow: true,
+                          fileType: {
+                            type: 1,
+                            text: '上传商务合作资料',
+                            tip: '温馨提示：只支持PPT、PDF、Excel格式，单个文件大小在50M以内'
+                          }
+                        });
                     }}>上传资料
                     </button>
                   </div>
-
+                  <label className="commonTip">注：文件格式支持PPT、Excel、PDF，单个文件大小限制在50M内</label>
                   <div className="business-table">
                     <table className="table table-bordered table-striped table-hover business-info">
                       <thead>
-                      <tr>
-                        <th>资料名称</th>
-                        <th>上传时间</th>
-                        <th>状态</th>
-                        <th>操作</th>
-                      </tr>
+                        <tr>
+                          <th>资料名称</th>
+                          <th>上传时间</th>
+                          <th>状态</th>
+                          <th>操作</th>
+                        </tr>
                       </thead>
                       <tbody>
-                      {
-                        businessList && businessList.map((item, index) => {
-                          return (
-                            <tr key={index}>
-                              <td>{item.ipFile}</td>
-                              <td>{moment(item.createDate).format('YYYY-MM-DD hh:mm:ss')}</td>
-                              {
-                                item.fileStatus === 2 && <td>审核中</td>
-                              }
-                              {
-                                item.fileStatus === 3 && <td>审核通过</td>
-                              }
-                              {
-                                item.fileStatus === 4 && <td>审核拒绝</td>
-                              }
-                              <td>
-                                <a href={item.fileAddress} download>下载</a>
+                        {
+                          businessList && businessList.map((item, index) => {
+                            return (
+                              <tr key={index}>
+                                <td>{item.ipFile}</td>
+                                <td>{moment(item.createDate).format('YYYY-MM-DD hh:mm:ss')}</td>
                                 {
-                                  item.createUserGuid === userGuid &&
-                                  <a onClick={async () => {
-                                    let materialGuid = item.ipMaterialGuid;
-                                    const params = { userGuid, materialGuid };
-                                    const isSuccess = await update.deleteMaterial(params);
-                                    if (_isObject(isSuccess)) {
-                                      this._setState(true, isSuccess.message);
-                                    }
-                                  }}>删除</a>
+                                  item.fileStatus === 2 && <td>审核中</td>
                                 }
+                                {
+                                  item.fileStatus === 3 && <td>审核通过</td>
+                                }
+                                {
+                                  item.fileStatus === 4 && <td>审核拒绝</td>
+                                }
+                                <td>
+                                  <a href={item.fileAddress} download>下载</a>
+                                  {
+                                    item.createUserGuid === userGuid &&
+                                    <a onClick={async () => {
+                                      let materialGuid = item.ipMaterialGuid;
+                                      const params = { userGuid, materialGuid };
+                                      const result = await update.deleteMaterial(params); 
+                                      this.callback({
+                                          businessList:true
+                                      }) 
+                                    }}>删除</a>
+                                  }
 
-                              </td>
-                            </tr>
-                          );
-                        })
-                      }
+                                </td>
+                              </tr>
+                            );
+                          })
+                        }
                       </tbody>
                     </table>
                   </div>
                 </div>
               }
+              {
+                !id && Component && <div className="create-right-container flex-column">
+                  <div className="business-header">
+                    <div className="business-title">招商资料</div>
+                    <button className="btn btn-primary limit-custom-btn" onClick={() => {
+                      this.setState({
+                        uploadShow: true,
+                        fileType: {
+                          type: 1,
+                          text: '上传商务合作资料',
+                          tip: '温馨提示：只支持PPT、PDF、Excel格式，单个文件大小在50M以内'
+                        }
+                      });
+                    }}>上传资料
+                    </button>
+                  </div>
+                  <label className="commonTip">注：文件格式支持PPT、Excel、PDF，单个文件大小限制在50M内</label>
+                  <div className="business-table">
+                    <table className="table table-bordered table-striped table-hover business-info">
+                      <thead>
+                        <tr>
+                          <th>资料名称</th>
+                          <th>上传时间</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {
+                          ipMaterialGuidList && ipMaterialGuidList.map((item, index) => {
+                            return (
+                              <tr key={index}>
+                                <td>{item.title}</td>
+                                <td>{moment(item.time).format('YYYY-MM-DD hh:mm:ss')}</td>
+                                <td>
+
+                                  {
+                                    item.guid && <a onClick={async () => {
+                                      ipMaterialGuidList.splice(index, 1)
+                                      this.setState({ ipMaterialGuidList: ipMaterialGuidList });
+                                      this._setState(true, '已删除');
+                                    }}>删除</a>
+                                  }
+
+                                </td>
+                              </tr>
+                            );
+                          })
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+              {
+                Component && updateList.ipTypeSuperiorNumber != 8 && <div className="create-right-container  padding-bootom0 flex-column">
+                  <p className="rules_Tip">
+                    请将相关资质文件整理压缩成.zip格式且文件大小不超过10M后上传
+                  </p>
+                  <div className="rules_pull">
+                    <div className="clearfix">
+                      <div className="ruleText">代理商请提供与版权方签署的代理协议</div>                      
+                      {
+                        updateList.agencyAgreement && <a href={updateList.agencyAgreement} className="download" download="">下载</a>
+                      }
+                      <button className="file btn btn-primary limit-custom-btn" onClick={() => {
+                        this.setState({
+                          uploadShow: true,
+                          fileType: {
+                            type: 2,
+                            text: '代理协议',
+                            tip: '请将相关资质文件整理压缩成.zip格式且文件大小不超过10M后上传'
+                          }
+                        });
+                      }}>上传资料
+                    </button>
+                    </div>
+                    {
+                      this.state.copyrightAgent['name'] && <p>{this.state.copyrightAgent['name']}</p>
+                    }
+
+                  </div>
+                  <div className="rules_pull">
+                    <div className="clearfix">
+                      <div className="ruleText">版权方请提供国家版权登记证或境外版权证明文件</div>  
+                      {
+                        updateList.copyrightCertificate && <a href={updateList.copyrightCertificate} className="download" download="">下载</a>
+                      }
+                      <button className="file btn btn-primary limit-custom-btn" onClick={() => {
+                        this.setState({
+                          uploadShow: true,
+                          fileType: {
+                            type: 3,
+                            text: '版权证明文件',
+                            tip: '请将相关资质文件整理压缩成.zip格式且文件大小不超过10M后上传'
+                          }
+                        });
+                      }}>上传资料
+                    </button>
+                    </div>
+                    {
+                      this.state.copyrightCertificateGuid['name'] && <p>{this.state.copyrightCertificateGuid['name']}</p>
+                    }
+                  </div>
+                  <div className="rules_pull">
+                    <div className="clearfix">
+                      <div className="ruleText">能够证明IP所有权的相关文件</div>
+                      {
+                        updateList.ownership && <a href={updateList.ownership} className="download" download="">下载</a>
+                      }
+                      <button className="file btn btn-primary limit-custom-btn" onClick={() => {
+                        this.setState({
+                          uploadShow: true,
+                          fileType: {
+                            type: 4,
+                            text: '所有权相关文件',
+                            tip: '请将相关资质文件整理压缩成.zip格式且文件大小不超过10M后上传'
+                          }
+                        });
+                      }}>上传资料
+                    </button>
+                    </div>
+                    {
+                      this.state.ownershipGuid['name'] && <p>{this.state.ownershipGuid['name']}</p>
+                    }
+                  </div>
+
+                </div>
+              }
+              {
+                Component && updateList.ipTypeSuperiorNumber == 8 && <div className="create-right-container  padding-bootom0 flex-column">
+                  <p className="rules_Tip">
+                    请将相关资质文件整理压缩成.zip格式且文件大小不超过10M后上传
+                </p>
+                  <div className="rules_pull">
+                    <div className="clearfix">
+                      <div className="ruleText">经纪公司请提供与艺人签署的经纪合同</div>
+                      <button className="file btn btn-primary limit-custom-btn" onClick={() => {
+                        this.setState({
+                          uploadShow: true,
+                          fileType: {
+                            type: 4,
+                            text: '所有权相关文件',
+                            tip: '请将相关资质文件整理压缩成.zip格式且文件大小不超过10M后上传'
+                          }
+                        });
+                      }}>上传资料
+                    </button>
+                    </div>
+                    {
+                      this.state.ownershipGuid['name'] && <p>{this.state.ownershipGuid['name']}</p>
+                    }
+                  </div>
+                </div>
+              }
+              {
+                Component && <div className="create-right-container flex-column foot-rule">
+                  <div className="cheked_rules">
+                    {
+                      this.state.isReading ? <div className="cheked limit-custom-checkbox"
+                        onClick={() => {
+                          this.setState({
+                            isReading: false
+                          })
+                        }}></div> : <div className="cheked"
+                          onClick={() => {
+                            this.setState({
+                              isReading: true
+                            })
+                          }}></div>
+                    }
+                    <p className="">  我已阅读并同意 <a onClick={()=>{
+                        this.setState({ ruleShow: true });
+                        }}>《版圈儿平台用户管理规定及信息处理协议》</a>，并为本单位所上传IP信息和数据的合法性、真实性负责。
+                  </p>
+                  </div>
+                </div>
+              }
+
             </div>
+
+
           </div>
         }
+
         <div className="create-area">
           {
-            !id ?
-              <div className="form-group flex-row justify-content-center align-items-center">
-                <button
+            // 新增IP
+            !id &&  <div className="form-group flex-row justify-content-center align-items-center">
+                {this.state.isReading ? <button
                   className="btn btn-primary publish-btn"
                   onClick={async () => {
                     await this.addIp(apiType);
                   }}>
                   提交
-                </button>
-                <button className="btn btn-default reset-btn"
-                        onClick={async () => {
-                          await update.doRest();
-                        }}>重置
-                </button>
-              </div>
-              :
-              <div className="form-group flex-row justify-content-center align-items-center">
-                {
-                  Number(iCheckStatus) === 3 ?
-                    <button className="btn btn-primary publish-btn"
-                            onClick={async () => {
-                              let params = this.parseParams();
-                              params.userGuid = userGuid;
-                              params.ipid = id;
-                              let pam = {};
-                              Object.keys(params).map((key, item) => {
-                                if (params[key] && key !== 'ipTypeSuperiorNumber') {
-                                  pam[key] = params[key];
-                                }
-                              });
-                              console.log(params, pam);
-                              await EditIpCheckStatus(apiType, pam);
-                            }}
-                    >更新
-                    </button>
-                    :
-                    <button className="btn btn-primary publish-btn"
-                            onClick={async () => {
-                              await this.editIpFun(apiType);
-                            }}
-                    >更新
-                    </button>
-                }
+                </button> : <button className="btn btn-primary publish-btn nocheck">提交</button>}
 
-              </div>
+                <button className="btn btn-default reset-btn"
+                  onClick={async () => {
+                    await this.clearstore();
+                  }}>重置
+                </button>
+              </div> 
+          }
+          {
+            id && this.state.isReading && <div className="form-group flex-row justify-content-center align-items-center">{ 
+              Number(iCheckStatus) === 3 ?
+                <button className="btn btn-primary publish-btn"
+                  onClick={async () => {
+                    let params = this.parseParams();
+                    params.userGuid = userGuid;
+                    params.ipid = id;
+                    let pam = {};
+                    Object.keys(params).map((key, item) => {
+                      if (params[key] && key !== 'ipTypeSuperiorNumber') {
+                        pam[key] = params[key];
+                      }
+                    }); 
+                    await EditIpCheckStatus(apiType, pam);
+                  }}
+                >更新
+                </button>
+                :
+                <button className="btn btn-primary publish-btn"
+                  onClick={async () => {
+                    await this.editIpFun(apiType);
+                  }}
+                >更新
+                </button>
+            }
+
+          </div>
+          } 
+          {
+           id && !this.state.isReading && <div className="form-group flex-row justify-content-center align-items-center">
+                <button className="btn btn-primary nocheck publish-btn">更新
+                </button>
+          </div>
           }
         </div>
-        {uploadShow &&
-        <UploadFileModel
-          title="上传商务合作资料"
-          ipid={id}
-          onClose={() => {
-            this.setState({
-              uploadShow: false
-            });
-          }
-          }/>
-        }
+        
         {
           /**
            * 添加ip 成功 提示：添加成功！ 返回首页/继续添加
            */
           addIpState &&
           <div className="model model-info"
-               style={{ position: "fixed", height: "100%", left: "0", right: "0", top: "0", bottom: "0" }}
-               onClick={() => {
-                 this.setState({
-                   addIpState: false
-                 });
-               }}>
+            style={{ position: "fixed", height: "100%", left: "0", right: "0", top: "0", bottom: "0" }}
+            onClick={() => {
+              this.setState({
+                addIpState: false
+              });
+            }}>
             <div className="model-container">
               <div className="model-body">
                 {message}
@@ -767,16 +1208,16 @@ export default class Update extends React.Component<IProps, IUpdateState> {
                 </button>
 
                 <button type="button" className="btn btn-submit"
-                        onClick={() => {
-                          window.location.reload();
-                        }}>
-                  继续添加
+                  onClick={() => {
+                    this.props.history.push('/user/1')
+                  }}>
+                  查看结果
                 </button>
               </div>
             </div>
           </div>
         }
-        <Footer data={footerNav}/>
+        <Footer data={footerNav} />
       </div>
     );
   }

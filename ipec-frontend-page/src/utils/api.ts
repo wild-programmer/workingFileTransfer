@@ -21,12 +21,13 @@ export async function reqLogin(
  * @param code 验证码
  */
 export async function onRegister(
-  { userLogin, userPass, code }: { userLogin: string, userPass: string, code: string }
+  { userLogin, userPass, code, type }: { userLogin: string, userPass: string, code: string, type: number }
 ) {
   return await $ajax.post("/frontend-user/register", {
     userLogin,
     userPass,
-    code
+    code,
+    type,
   });
 }
 
@@ -120,10 +121,37 @@ export async function reqNavList() {
 }
 
 /**
+ * 公示IP接口
+ */
+export async function ipPublic(param) {
+  let url = `/frontend-index/list-publicity-ip?currentPage=${param.currentPage}&pageSize=${param.pageSize}`;
+  return await $ajax.get(url, param);
+}
+
+/**
+ * GET版圈主类型
+ */
+export async function mediaType() {
+  let url = `/frontend-common/list-main-type `;
+  return await $ajax.get(url);
+}
+
+/**
  * 请求 ip 类型列表
  */
 export async function reqIpTypeList() {
   return await $ajax.get("/frontend-ip-library/type-list");
+}
+
+export async function listMainType() {
+  return await $ajax.get("/frontend-common/list-main-type");
+}
+
+/**
+ * 请求 国别信息
+ */
+export async function listCountry() {
+  return await $ajax.get("/frontend-common/list-country");
 }
 
 /**
@@ -137,21 +165,23 @@ export async function reqIpList() {
  * 请求 ip 选中类型 子分类列表
  */
 export async function reqIpTypeListTab({
-                                         ipTypeSuperiorNumber,
+                                         ipTypeSuperiorNumbers,
                                          ipLocation = "", ipTypeNumber = "",
                                          ipFormNumber = "", benginShowDate = "", endShowDate = "",
-                                         ipStatus = "", ipSex = "",
+                                         ipStatus = "", ipSex = "", countryType = "", ipIsAuthenticated,
                                          currentPage, pageSize
                                        }: IStatus) {
   return await $ajax.get("/frontend-ip-library/query-list", {
     params: {
-      ipTypeSuperiorNumber,
+      ipTypeSuperiorNumbers,
       ipLocation,
       ipTypeNumber,
       ipFormNumber,
       benginShowDate,
       endShowDate,
       ipStatus,
+      countryType,
+      ipIsAuthenticated,
       ipSex,
       currentPage,
       pageSize
@@ -196,10 +226,28 @@ export async function reqEditData(id: string) {
 }
 
 /**
+ * 获取授权品类接口
+ * typeCategory 类型类别:1可授权品类、2已授权品类、3意向授权品类
+ */
+
+export async function getAuthorize(typeCategory: Number) {
+  return await $ajax.get(`/frontend-common/list-authorize-type`, {
+    params: {
+      typeCategory
+    }
+  });
+
+}
+
+/**
  * 添加ip
  */
+// export async function createIp(type: string, params: object) {
+//   let url = `/frontend-user-publish/${type}/save`;
+//   return await $ajax.post(url, params);
+// }
 export async function createIp(type: string, params: object) {
-  let url = `/frontend-user-publish/${type}/save`;
+  let url = `/frontend-user-publish/save-ip`;
   return await $ajax.post(url, params);
 }
 
@@ -217,13 +265,23 @@ export async function EditIpCheckStatus(type: string, params: object) {
 }
 
 /**
- * 上传商务资料
+ * 上传商务资料 IP 编辑
  * file userGuid ipid
  */
 export async function uploadBusinessData(params) {
   let url = `/frontend-user-publish/upload-material?userGuid=${params.userGuid}&ipid=${params.ipid}`;
   return await $ajax.post(url, params.file);
 
+}
+
+/**
+ * 上传商务资料 IP 新增
+ * 1商务资料、2代理协议、3国家版权登记证或境外版权证明文件、4证明IP所有权的相关文件、5经纪合同
+ * file userGuid ipid
+ */
+export async function uploadUploadFile(params) {
+  let url = `/frontendFileUpload/upload-file?userGuid=${params.userGuid}&type=${params.type}`;
+  return await $ajax.post(url, params.file);
 }
 
 export async function getArtDetail(type, params) {
@@ -274,6 +332,22 @@ export async function getArtLike(
   return await $ajax.get('/frontend-ip-detail-common/get-love', {
     params: {
       ipTypeSuperiorNumber,
+    }
+  });
+}
+
+/**
+ * 相关介绍- 影人相关播放量
+ * @param ipTypeSuperiorNumber
+ * @param ipid
+ */
+export async function getIpPeople(
+  { ipTypeSuperiorNumber, ipid }: { ipTypeSuperiorNumber: string, ipid: number }
+) {
+  return await $ajax.get('frontend-ip-detail-common/get-ip-people', {
+    params: {
+      ipTypeSuperiorNumber,
+      ipid
     }
   });
 }
@@ -339,7 +413,7 @@ export async function getPortalPostDetail(
 export async function setPortalPostLike(
   { portalPostGuid, userGuid, isLike }: { portalPostGuid: string, userGuid: string, isLike: number }
 ) {
-  return await $ajax.post(`/frontend-portal-post/portalPost-give-like?portalPostGuid=${portalPostGuid}&userGuid=${userGuid}`, {    
+  return await $ajax.post(`/frontend-portal-post/portalPost-give-like?portalPostGuid=${portalPostGuid}&userGuid=${userGuid}`, {
     // userGuid,
     // portalPostGuid,
   });
@@ -349,10 +423,11 @@ export async function setPortalPostLike(
  * GET 详情页-关键词云
  */
 export async function getWordCloub(
-  { ipid }: { ipid: number }
+  { userGuid, ipid }: { userGuid: string, ipid: number }
 ) {
   return await $ajax.get("/frontend-ip-detail-common/get-wb-word", {
     params: {
+      userGuid,
       ipid,
     }
   });
@@ -379,27 +454,86 @@ export async function getProduction(
  * GET 详情页-数据总览
  */
 export async function getTotalData(
-  { typeId, ipid }: { typeId: number, ipid: number }
+  { ipTypeSuperiorNumber, ipid }: { ipTypeSuperiorNumber: number, ipid: number }
 ) {
   return await $ajax.get("/frontend-ip-detail-common/get-data-screening", {
     params: {
-      typeId,
+      ipTypeSuperiorNumber,
       ipid,
     }
   });
 }
 
 /**
- * 详情页-微博趋势、媒体指数、热度指数接口
+ * 详情页-基础数据-搜索基础数据，互动基础数据，媒体关注基础数据，粉丝趋势;
  */
 export async function getEchartsData(
-  { dayNumber, ipid, typeId }: { dayNumber: number, ipid: number, typeId: number }
+  { userGuid, dayNumber, ipid, typeId }: { userGuid?: string, dayNumber: number, ipid: number, typeId: number }
 ) {
   return await $ajax.get("/frontend-ip-detail-common/get-data-acquire", {
     params: {
+      userGuid,
       dayNumber,
       ipid,
       typeId,
+    }
+  });
+}
+
+/**
+ * 详情页-基础信息-电影-院线票房趋势;
+ */
+export async function getBoxOfficeData(
+  { dayNumber, ipid }: { dayNumber: number, ipid: number }
+) {
+  return await $ajax.get("/frontend-ip-detail-common/get-box-office", {
+    params: {
+      dayNumber,
+      ipid,
+    }
+  });
+}
+
+/**
+ * 详情页- 基础信息-电视剧/综艺播放趋势、电影在线平台趋势
+ * @param type
+ * @param dayNumber
+ * @param ipid
+ */
+export async function getBroadcastTrend(
+  { type, dayNumber, ipid }: { type: number, dayNumber: number, ipid: number }
+) {
+  return await $ajax.get('/frontend-ip-detail-common/get-play-trends', {
+    params: {
+      type,
+      dayNumber,
+      ipid,
+    }
+  });
+}
+
+/**
+ * 详情页-基础信息-口碑信息
+ * @param ipid
+ */
+export async function getPublicPraise(
+  { ipid }: { ipid: number }
+) {
+  return await $ajax.get('/frontend-ip-detail-common/get-public-praise', {
+    params: {
+      ipid
+    }
+  });
+}
+
+/**
+ * 详情页-基础信息-播放平台分布
+ * @param ipid
+ */
+export async function getBroadcastPlaform({ ipid }: { ipid: number }) {
+  return $ajax.get('/frontend-ip-detail-common/get-playback-platform', {
+    params: {
+      ipid
     }
   });
 }
@@ -421,15 +555,31 @@ export async function getNewsData(
 }
 
 /**
- * 详情页-粉丝画像、地区分布
+ * 详情页评估数据-受众画像（1 年龄,2 性别），地区分布（3 省份 ，4 区域）；
  */
 export async function getFansArea(
-  { ipid, typeId }: { ipid: number, typeId: number }
+  { userGuid, ipid, typeId }: { userGuid: string, ipid: number, typeId: number }
 ) {
   return await $ajax.get("/frontend-ip-detail-common/get-acquire", {
     params: {
+      userGuid,
       ipid,
       typeId,
+    }
+  });
+}
+
+/**
+ * 评估详情页-商业价值评估
+ */
+export async function getBusniess(
+  { userGuid, ipid, ipTypeSuperiorNumber }: { userGuid: string, ipid: number, ipTypeSuperiorNumber: number }
+) {
+  return await $ajax.get("/frontend-ip-detail-common/get-business-value", {
+    params: {
+      userGuid,
+      ipid,
+      ipTypeSuperiorNumber
     }
   });
 }
@@ -463,13 +613,15 @@ export async function upload(params) {
  */
 
 export async function getIpDetail(
-  { ipid, ipTypeNumber }: { ipid: number, ipTypeNumber: number }
+  { ipid, ipTypeNumber, userGuid }: { ipid: number, ipTypeNumber: number, userGuid: any }
 ) {
-  let url = "/frontend-user-publish/get-ip-detail";
+  let url = "/frontend-user-publish/get-ip-edit";
+  let ipTypeSuperiorNumber = ipTypeNumber;
   return await $ajax.get(url, {
     params: {
+      userGuid,
       ipid,
-      ipTypeNumber
+      ipTypeSuperiorNumber
     }
   });
 }
@@ -501,9 +653,11 @@ export async function savePic(params) {
 
 /**
  * （经济）公司列表接口
+ * company
  */
-export async function listCompany() {
-  const url = '/frontend-user-publish/list-company';
+export async function listCompany(params) {
+  const { companyName, currentPage, pageSize } = params;
+  const url = `/frontend-user-publish/list-company?companyName=${companyName || ''}&currentPage=${currentPage || 1}&pageSize=${pageSize || 30}`;
   return await $ajax.get(url);
 }
 
@@ -522,11 +676,11 @@ export async function getMyUpdate(params) {
  * 实名认证
  */
 export async function RealNameAuthentication(
-  { papersPicGuid, picGuid, userGuid, userRealName }: { papersPicGuid: string, picGuid: string, userGuid: string, userRealName: string }
+  { papersPicGuid, papersPositivePicGuid, picGuid, userGuid, userRealName }: { papersPicGuid: string, papersPositivePicGuid: string, picGuid: string, userGuid: string, userRealName: string }
 ) {
   const url = '/frontend-user/realname-authentication';
   return await $ajax.post(url, {
-    papersPicGuid,
+    papersPicGuid, papersPositivePicGuid,
     picGuid,
     userGuid,
     userRealName
@@ -548,15 +702,15 @@ export async function RealNameAuthentication(
 
 export async function setUserInformation(
   { companyGuid, companyName, companyType, desc, job, picGuid, userGuid, userNickname, userRealName }: {
-    companyGuid: string,
-    companyName: string,
-    companyType: string,
-    desc: string,
-    job: string,
+    companyGuid?: string,
+    companyName?: string,
+    companyType?: string,
+    desc?: string,
+    job?: string,
     picGuid: string,
     userGuid: string,
-    userNickname: string,
-    userRealName: string
+    userNickname?: string,
+    userRealName?: string
   }
 ) {
   return await $ajax.post("/frontend-user/update-user", {
@@ -622,7 +776,7 @@ export async function deleteMyRelease(params) {
 
 /**
  * 获取个人信息
- * @param params
+ * @param userGuid
  */
 export async function getUserInfo(
   userGuid: string
@@ -635,7 +789,164 @@ export async function getUserInfo(
   });
 }
 
+/**
+ * 获取公司信息
+ * @param userGuid
+ */
+export async function getCompanyInfo(userGuid: string) {
+  let url = `/frontend-user/get-user-company`;
+  return await $ajax.get(url, {
+    params: {
+      userGuid
+    }
+  });
+}
+
 export async function hotWords(params) {
   let url = 'frontend-portal-post/portalHotWords/list';
   return await $ajax.get(url, { params });
+}
+
+/**
+ * 详情页-ip相关介绍
+ */
+export async function getDetail(
+  { userGuid, ipTypeSuperiorNumber, ipid }: { userGuid?: string, ipTypeSuperiorNumber: string, ipid: string }
+) {
+  let url = "/frontend-ip-detail/get-ip-detail";
+  return await $ajax.get(url, {
+    params: {
+      userGuid,
+      ipTypeSuperiorNumber,
+      ipid
+    }
+  });
+}
+
+/**
+ * 对比数据 关键词云
+ */
+export async function getWbWord(
+  { userGuid, ipids }: { userGuid?: string, ipids: string }
+) {
+  let url = `/frontend-datacomparison/list-wb-word?userGuid=${userGuid}&ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 院线电影票房 对比
+ */
+export async function getPraise(
+  { userGuid, ipids }: { userGuid?: string, ipids: string }
+) {
+  let url = `/frontend-datacomparison/list-public-praise?userGuid=${userGuid}&ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 院线电影票房 对比
+ */
+export async function getBoxOffice(
+  { userGuid, ipids }: { userGuid?: string, ipids: string }
+) {
+  let url = `/frontend-datacomparison/list-box-office?userGuid=${userGuid}&ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 对比数据 影视综在线平台数据对比
+ * 1播放量、2热度
+ */
+export async function getPlayTrends(
+  { userGuid, type, ipids }: { userGuid?: string, ipids: string, type: string }
+) {
+  let url = `/frontend-datacomparison/list-play-trends?userGuid=${userGuid}&type=${type}&ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 对比数据 商业价值
+ */
+export async function getbusiness(
+  { userGuid, ipTypeSuperiorNumber, ipids }: { userGuid?: string, ipids: string, ipTypeSuperiorNumber: string }
+) {
+  let url = `/frontend-datacomparison/list-business-value?userGuid=${userGuid}&ipTypeSuperiorNumber=${ipTypeSuperiorNumber}&ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 评估数据对比接口——受众画像
+ * typeId 2性别、1年龄
+ */
+export async function getPortrait(
+  { userGuid, typeId, ipids }: { userGuid?: string, ipids: string, typeId: string }
+) {
+  let url = `/frontend-datacomparison/list-acquire?userGuid=${userGuid}&typeId=${typeId}&ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 基础数据对比接口-数据总揽
+ *
+ * typeId: 搜索基础指数(5百度搜索指数、6搜狗搜索指数)、互动基础数据(41微博超话帖子数、40微博超话阅读数、9微博话题阅读数、10微博话题帖子数)、
+ * 媒体关注基础数据(13百度咨询指数、8微信公众号文章数、15微信热度指数)、粉丝趋势(14微博粉丝数、33贴吧粉丝数)
+ */
+export async function getAcquire(
+  { userGuid, typeId, ipids, dayNumber }: { userGuid?: string, dayNumber: string, typeId: string, ipids: string }
+) {
+  let url = `/frontend-datacomparison/list-data-acquire?userGuid=${userGuid}&typeId=${typeId}&ipids=${ipids}&dayNumber=${dayNumber}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 基础数据对比接口-数据总揽
+ */
+export async function getScreening(
+  { userGuid, ipTypeSuperiorNumber, ipids }: { userGuid?: string, ipTypeSuperiorNumber: string, ipids: string }
+) {
+  let url = `/frontend-datacomparison/list-data-screening?userGuid=${userGuid}&ipTypeSuperiorNumber=${ipTypeSuperiorNumber}&ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 基础IP数据集合接口
+ */
+export async function getlistIp(
+  { ipids }: { ipids: string }
+) {
+  let url = `/frontend-datacomparison/list-ip?ipids=${ipids}`;
+  return await $ajax.get(url, {});
+}
+
+/**
+ * 提交企业认证
+ * @param params
+ */
+export async function companyCerfication(params) {
+  let url = '/frontend-user/company-authentication';
+  return await $ajax.post(url, params);
+}
+
+/**
+ * 获取企业信息
+ * @param userGuid
+ */
+export async function getCompany({ companyGuid }: { companyGuid: string }) {
+  return await $ajax.get('/frontend-common/get-company', {
+    params: {
+      companyGuid
+    }
+  });
+}
+
+/**
+ * GET /frontend-common/list-company-ip获取企业IP接口
+ * @param companyGuid
+ */
+export async function getCompanyIp({ companyGuid }: { companyGuid: string }) {
+  return await $ajax.get('/frontend-common/list-company-ip', {
+    params: {
+      companyGuid
+    }
+  });
 }

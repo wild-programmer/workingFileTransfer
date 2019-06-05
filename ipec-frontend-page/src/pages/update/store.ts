@@ -6,32 +6,55 @@ import {
   getDownload,
   getDownloadMaterial,
   delMaterial,
-  uploadBusinessData, listCompany
+  uploadBusinessData, listCompany,listMainType,listCountry
 } from "@utils/api";
+import { async } from "q";
 
 interface IupdateStatus {
   pub: object,
   sub: object,
-  data: object,
+  showDate: object,
 }
 
 interface IUpdateState {
-  ipName: string,
-  ipTypeSuperiorNumber: string,
-  ipLocation: string,
-  ipTypeNumber: string,
-  ipDesc: string,
+  ipName: string, //IP名称
+  ipTypeSuperiorNumber: string, //IP分类 IP形象等一级类型guid
+  ipDesc: string, //IP 简介
+  detail:string,//图文详情
+  ipLocation: string, //废弃
+  countryNames:string, //国家名字
+  countryTypes:string,//国家编号
+  ipTypeNumber: string,//IP类型 ip二级类型guid， 
+  owner:string,// IP版权方
+  copyrightAgent:string, //ip版权代理方
+  recordCountry:string,//ip备案国
+  grantedType: string,//已授权品类
+  authorizedType: string,//可授权品类
+  intentAuthorization: string,//意向授权品类
+  authorizedLocation: string,//可授权区域
+  authorizedAllottedTime: string,//可授权期限日期
+  isTransferable : Number,//是否可以转授权
+  ipMaterialGuidList:string,//商务资料
   ipFormNumber: string,
   ipPicGuid: string,
   sex?: string,
-  height?: number,
+  height?: number, 
+  
+  prodect: Array<object>;
+  cooperationCase: Array<object>,
 }
+
 
 class CreateStore {
   @observable
   previousData: any = {};
-
+  //记录新添加类别的状态
+  @observable typeListCase: object = {
+    selected: '', 
+    clearditor:false,
+  };
   @observable typeList: object[];
+  @observable typeListTop: object[];
   @observable subTypeList: object[];
   @observable locationList: object[];
   @observable modalityList: object[] = [];
@@ -39,11 +62,36 @@ class CreateStore {
   @observable updateList: IUpdateState = {
     ipName: "",
     ipTypeSuperiorNumber: '',
-    ipLocation: '',
+    ipLocation: '1',
     ipTypeNumber: '',
     ipDesc: "",
+    detail:'',
     ipFormNumber: '',
     ipPicGuid: '',
+    countryNames:'',
+    countryTypes:'',
+    owner:'',// IP版权方
+    copyrightAgent:'',
+    recordCountry:'',
+    grantedType: undefined,//已授权品类
+    authorizedType: undefined,//可授权品类
+    intentAuthorization: undefined,//意向授权品类
+    authorizedLocation: undefined,//可授权区域
+    authorizedAllottedTime: '',//可授权期限日期
+    isTransferable : 0,//是否可以转授权  
+    ipMaterialGuidList:'',//商务资料
+    prodect: [
+      { pic: '', title: '' },
+      { pic: '', title: '' },
+      { pic: '', title: '' },
+      { pic: '', title: '' },
+    ],
+    cooperationCase: [
+      { pic: '', title: '' },
+      { pic: '', title: '' },
+      { pic: '', title: '' },
+      { pic: '', title: '' },
+    ],
   };
   @observable businessList: [];
   @observable companyData: [];
@@ -59,27 +107,72 @@ class CreateStore {
       ipPicGuid: ''
     },
     sub: {},
-    data: {},
+    showDate: {},
   };
 
+//切换IP分类时 仅限新增IP 清空参数值
+clearSub(){
+  let _updateList = null;
+  _updateList =  JSON.stringify(this.updateList); 
+  //  JSON.
+  _updateList = JSON.parse(_updateList); 
+   delete _updateList.ipName;
+   delete _updateList.ipTypeSuperiorNumber;
+   delete _updateList.ipDesc;  
+  for( let val in _updateList){
+    if(val == 'authorizedLocation' || val == 'authorizedType' || val == 'grantedType' || val == 'intentAuthorization'){
+      _updateList[val] = undefined
+    }else if(val == 'prodect'||val == 'cooperationCase'){
+      _updateList[val] =  [
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+      ] 
+    } else{
+      _updateList[val] = '' 
+    }    
+  } 
+  this.updateList = { ...this.updateList, ..._updateList };
+  console.log(this.updateList)
+ }
+
+//获取最新 IP 分类
+@action
+async getlistMainType() { 
+  await this.getLocation(); 
+  const { errorCode, result }: any = await listMainType();
+  if (errorCode === "200") {
+    let typeList: object[] = [];
+    let _typeListTop: object[] = [];
+    result.forEach(element => { 
+      let { childTypeList, mainTypeGuid, picUrl, typeName } = element;  
+      childTypeList && childTypeList.forEach(val => {
+        val['mainTypeGuid'] = mainTypeGuid;
+        val['type'] = val.ipType;
+        typeList.push(val);
+      }); 
+      _typeListTop.push({ mainTypeGuid, picUrl, typeName })
+    });
+    this.typeList = typeList;
+    this.typeListTop = _typeListTop;
+    console.log("typeList@------")
+    console.log(typeList)
+  }
+}
+//修改之前的 IP分类 (二级分类菜单)
   @action
   async ipTypeList() {
     let { errorCode, result }: any = await reqIpTypeList();
-    if (errorCode === "200") {
-      let typeList: object[] = [];
+    if (errorCode === "200") { 
       let subTypeList: object[] = [];
-      let locationList: object[] = [];
       let modalityList: object[] = [];
 
       result.forEach((item: any) => {
-        let { ipType: type, ipTypeNumber, sublist } = item;
-        typeList.push({ type, ipTypeNumber });
+        let { ipType: type, ipTypeNumber, sublist } = item; 
         sublist.forEach((val: any) => {
           let { ipType, sublist: sub } = val;
-          if (ipType === "地区") {
-            let location = { [ipTypeNumber]: sub };
-            locationList.push(location);
-          }
+          
           if (ipType === "类型") {
             let subtype = { [ipTypeNumber]: sub };
             subTypeList.push(subtype);
@@ -89,13 +182,24 @@ class CreateStore {
             modalityList.push(modality);
           }
         });
-      });
-      this.typeList = typeList;
+      }); 
       this.subTypeList = subTypeList;
-      this.locationList = locationList;
-      this.modalityList = modalityList;
+      this.modalityList = modalityList; 
     }
   }
+
+@action
+async getLocation (){
+  let { errorCode, result }:any = await listCountry();
+  let _locationList: object[] = [];   
+  if(errorCode === "200"){ 
+    result.forEach((item:any)=>{
+      _locationList.push(item);
+    })  
+    this.locationList = _locationList;
+    return _locationList
+  } 
+}
 
   @action
   async upload(params) {
@@ -107,14 +211,39 @@ class CreateStore {
 
   @action
   async doRest() {
-    this.updateList = {
+    this.updateList = { 
       ipName: "",
       ipTypeSuperiorNumber: '',
-      ipLocation: '',
+      ipLocation: '1',
       ipTypeNumber: '',
       ipDesc: "",
+      detail:'',
       ipFormNumber: '',
-      ipPicGuid: ''
+      ipPicGuid: '',
+      countryNames:'',
+      countryTypes:'',
+      owner:'',// IP版权方
+      copyrightAgent:'',
+      recordCountry:'',
+      grantedType: undefined,//已授权品类
+      authorizedType: undefined,//可授权品类
+      intentAuthorization: undefined,//意向授权品类
+      authorizedLocation: undefined,//可授权区域
+      authorizedAllottedTime: '',//可授权期限日期
+      isTransferable : 0,//是否可以转授权
+      ipMaterialGuidList:'',//商务资料
+      prodect: [
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+      ],
+      cooperationCase: [
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+        { pic: '', title: '' },
+      ],
     };
   }
 
@@ -127,19 +256,28 @@ class CreateStore {
   // 获取编辑页的基本信息
   @action
   async getUpdateDetail(params) {
-    const { ipid, ipTypeNumber }: { ipid: number, ipTypeNumber: number } = params;
+    const { ipid, ipTypeNumber,userGuid }: { ipid: number, ipTypeNumber: number ,userGuid:any} = params;
     let { errorCode, result }: any = await getIpDetail({
-      ipid, ipTypeNumber
+      ipid, ipTypeNumber,userGuid
     });
     if (errorCode === '200') {
-      this.updateList = result;
+      for( let val in result.data){
+        if(val == 'authorizedLocation' || val == 'authorizedType' || val == 'grantedType' || val == 'intentAuthorization'){
+          if(result.data[val] == '' || result.data[val] === undefined) result.data[val] = undefined;
+        }
+      }
+      this.updateList = result.data;
     }
   }
 
   @action
-  async setStatus(params: IupdateStatus) {
-    this.updateList = { ...this.updateList, ...params };
-    // console.log(this.updateList);
+  async setStatus(params) {
+
+    this.updateList = { ...this.updateList, ...params };  
+    console.log("this.updateList@") 
+  }
+  async setStatus2(params) {
+    this.updateList = { ...this.updateList, ...params };  
   }
 
   // 招商资料列表
@@ -194,8 +332,8 @@ class CreateStore {
    * @param dataURI
    */
   @action
-  async companyList() {
-    const { errorCode, result }: any = await listCompany();
+  async companyList({companyName,currentPage,pageSize}) {
+    const { errorCode, result }: any = await listCompany({companyName,currentPage,pageSize});
     if (errorCode === '200') {
       this.companyData = result;
       return result

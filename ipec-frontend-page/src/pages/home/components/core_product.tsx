@@ -16,14 +16,14 @@ export default class CoreProduct extends React.Component<ICoreProductProps> {
     const { data } = this.props;
     return (
       <div className="content-container flex-column justify-content-center align-items-center">
-        <span className="span-title">{data.moduleName || ""}</span>
-        <ul className="product-case flex-row justify-content-around flex-wrap">
+        <span className="span-title">{data.moduleName || "核心产品"}</span>
+        <ul className="product-case flex-row justify-content-between flex-wrap">
           {
-            data.sublist.map((item: any) => {
+            data.map((item: any) => {
               let { dataName: name } = item;
               let img = this.icon(name) || ic_authorized;
               return <li key={name} className="flex-column align-items-center justify-content-center">
-                <img src={img} alt=""/>
+                <img src={item.dataPicUrl} alt=""/>
                 <span>{name}</span>
                 <span>{item.dataDesc}</span>
               </li>;

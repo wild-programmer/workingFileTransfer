@@ -1,7 +1,9 @@
 interface IStatus {
   selected?: string,
-  ipTypeSuperiorNumber?: string,
+  selectedchild?:string,
+  ipTypeSuperiorNumbers?: string,
   ipLocation?: string,
+  countryType?: string,
   ipTypeNumber?: string,
   ipFormNumber?: string,
   benginShowDate?: string,
@@ -10,4 +12,5 @@ interface IStatus {
   ipSex?: string,
   currentPage?: number,
   pageSize?: number,
+  ipIsAuthenticated?: number,
 }

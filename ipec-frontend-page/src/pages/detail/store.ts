@@ -1,9 +1,21 @@
-import { action, observable } from "mobx";
+import { action, observable, toJS } from "mobx";
 import {
-  getArtDetail, getArtLike, getDownload,
-  getStarDetail,
-  getPortalpost, getWordCloub, getProduction, getTotalData,
-  getEchartsData, getNewsData, getFansArea, getFollow
+  getDetail,
+  getArtLike,
+  getDownload,
+  getPortalpost,
+  getWordCloub,
+  getProduction,
+  getTotalData,
+  getEchartsData,
+  getNewsData,
+  getFansArea,
+  getFollow,
+  getBusniess,
+  getIpPeople,
+  getBoxOfficeData,
+  getBroadcastTrend,
+  getPublicPraise, getBroadcastPlaform
 
 } from "@utils/api";
 
@@ -13,6 +25,7 @@ interface IObj {
 }
 
 interface IEchartStatus {
+  userGuid: string,
   dayNumber: number,
   ipid: number,
   typeId: number,
@@ -30,11 +43,13 @@ class DetailStore {
   @observable data: object;
   @observable component: string;
   @observable status: IEchartStatus = {
+    userGuid: "",
     dayNumber: 10,
     ipid: 0,
     typeId: 0,
     type: ""
   };
+  @observable ipDetailData: object = {};
   @observable ipStarList: object[];
   @observable starList: object = {
     repProductionList: [],
@@ -46,7 +61,6 @@ class DetailStore {
     ipNewDataAbout: [], // 相关动态
     followStatus: Boolean,
   };
-
   @observable detailList: object = {
     ipArtLikeData: [],
     ipCaseData: [],
@@ -61,7 +75,6 @@ class DetailStore {
     yProvince: [],
     ageData: [],
     agePercent: [],
-    // coBrands: "",
     xHot: [],
     yHot: [],
     yBlog: [],
@@ -73,43 +86,49 @@ class DetailStore {
     xfansBlog: [],
     yfansBlog: [],
     followStatus: Boolean,
+    ipPeopleList: [],
   };
-  @observable ipTotalData: object = {
-    baiduIndex: {},
-    baiduInformation: {},
-    blogFans: {},
-    cooperativeBrands: {}
-  };
+  @observable ipTotalData: object = {};
+  @observable businessData = [];
 
-  @action
-  async requestDetail() {
-    this.component = "art";
-    this.data = {};
-  }
+  @observable boxOfficeData = [];
+  @observable boxOfficeDate = [];
+
+  @observable broadcastTrendData = {
+    '51': [], // 爱奇艺
+    '62': [], // 优酷
+    '49': [], //  芒果TV
+    '46': [], // 腾讯视频
+    '65': [], // 搜狐,
+    '53': [], // 乐视
+  };
+  @observable broadcastTrendDate = [];
+  @observable publicPraiseData = [];
+  @observable broadcastPlatformData = [];
+  @observable broadcastPlatformData2 = [];
 
   randomData() {
     return Math.round(Math.random() * 200);
   }
 
   /**
-   *  文创详情页面
+   * 详情页-IP相关介绍
    */
   @action
-  async ipArtDetail(type, params) {
-    const { userGuid, ipid }: { userGuid?: string, ipid: number } = params;
-    const { errorCode, result }: any = await getArtDetail(type, {
-      userGuid, ipid
+  async ipDetail(params) {
+    const { userGuid, ipTypeSuperiorNumber, ipid }: { userGuid?: string, ipTypeSuperiorNumber: string, ipid: string } = params;
+    const { errorCode, result }: any = await getDetail({
+      userGuid,
+      ipTypeSuperiorNumber,
+      ipid
     });
     if (errorCode === "200") {
-      const ipArtDetail: object[] = [];
-      let ipArtObj: object;
-      ipArtObj = result;
-      ipArtDetail.push(ipArtObj);
-      this.detailList['ipArtDetailList'] = ipArtDetail;
-      ipArtDetail.forEach((item: any) => {
-        this.detailList['followStatus'] = item.isFollowed;
-      });
-
+      this.ipDetailData = result;
+      this.detailList['followStatus'] = result.isFollowed;
+      this.starList['ipName'] = result.ipName;
+      if (Number(ipTypeSuperiorNumber) === 8) {
+        this.starList['coBrands'] = result.cooperativeBrand;
+      }
     }
   }
 
@@ -125,13 +144,12 @@ class DetailStore {
   }
 
   /**
-   * 详情页-微博趋势、媒体指数、热度指数接口
-   * @param type
+   * 详情页--搜索基础数据，互动基础数据，媒体关注基础数据，粉丝趋势;
    */
   async getEcharts() {
-    const { dayNumber, ipid, typeId, type } = this.status;
+    const { userGuid, dayNumber, ipid, typeId, type } = this.status;
     const { errorCode, result }: any = await getEchartsData({
-      dayNumber, ipid, typeId
+      userGuid, dayNumber, ipid, typeId
     });
     let xHot: string[] = [];
     let yHot: string[] = [];
@@ -141,32 +159,100 @@ class DetailStore {
     let xMedia: string[] = [];
     let xfan: string[] = [];
     let yfan: string[] = [];
-    if (errorCode === "200") {
-      // 热度指数 (typeId)- 5/6/11/15;
-      // 微博趋势 - 10/9/14/16/12
-      // 媒体指数 - 13/8
-      result.forEach((item) => {
-          if (type === "hot") {
+    if (errorCode === "200" && result.errorCode === 200) {
+      result.data.forEach((item) => {
+        if (type === "hot") {
           yHot.push(item.dataNumber);
           xHot.push(item.dataRiiq);
           this.detailList['xHot'] = xHot;
           this.detailList['yHot'] = yHot;
-          } else if (type === "blog") {
+        } else if (type === "blog") {
           yBlog.push(item.dataNumber);
           xBlog.push(item.dataRiiq);
           this.detailList['xBlog'] = xBlog;
           this.detailList['yBlog'] = yBlog;
-          } else if (type === "media") {
+        } else if (type === "media") {
           yMedia.push(item.dataNumber);
           xMedia.push(item.dataRiiq);
           this.detailList['xMedia'] = xMedia;
           this.detailList['yMedia'] = yMedia;
-          } else if (type === "fan") {
+        } else if (type === "fans") {
           yfan.push(item.dataNumber);
           xfan.push(item.dataRiiq);
           this.detailList['xfan'] = xfan;
           this.detailList['yfan'] = yfan;
         }
+      });
+    }
+  }
+
+  /**
+   * 详情页-基础信息-电影-院线票房趋势;
+   */
+  @action
+  async getBoxOffice(params) {
+    const { dayNumber, ipid }: { dayNumber: number, ipid: number } = params;
+    const { errorCode, result: data }: any = await getBoxOfficeData({
+      dayNumber, ipid
+    });
+    if (errorCode === '200') {
+      data.forEach((item: any) => {
+        this.boxOfficeData = [...this.boxOfficeData, item.dataNumber];
+        this.boxOfficeDate = [...this.boxOfficeDate, item.dataRiiq];
+      });
+    } else {
+      // return errorMsg;
+    }
+  }
+
+  /**
+   * 电视剧/综艺播放趋势、电影在线平台趋势
+   * @param params
+   */
+  @action
+  async getBroadcastTrend(params) {
+    const { type, dayNumber, ipid }: { type: number, dayNumber: number, ipid: number } = params;
+    const { errorCode, result: data }: any = await getBroadcastTrend({
+      type, dayNumber, ipid
+    });
+    if (errorCode === '200') {
+      data.forEach((i: any) => {
+        if (i.list !== null) {
+          i.list.forEach((item: any) => {
+            this.broadcastTrendData[i.typeId] = [...this.broadcastTrendData[i.typeId], item.dataNumber];
+            this.broadcastTrendDate = [...this.broadcastTrendDate, item.dataRiiq];
+          });
+          console.log(toJS(this.broadcastTrendData));
+        }
+      });
+    } else {
+      // return errorMsg;
+    }
+  }
+
+  /**
+   * 口碑信息 getPublicPraise
+   */
+  async getPublicPraise({ ipid }: { ipid: number }) {
+    const { errorCode, result }: any = await getPublicPraise({ ipid });
+    if (errorCode === '200') {
+      this.publicPraiseData = result;
+    }
+  }
+
+  /**
+   * 基详情页-础信息-播放平台分布
+   */
+  async getBroadcastPlatform({ ipid }: { ipid: number }) {
+    const { errorCode, result }: any = await getBroadcastPlaform({ ipid });
+    if (errorCode === '200') {
+      this.broadcastPlatformData2 = result;
+      result.forEach((it) => {
+        let obj: IObj = {
+          name: it.typeName,
+          value: it.dataNumber,
+        };
+        this.broadcastPlatformData.push(obj);
       });
     }
   }
@@ -186,35 +272,26 @@ class DetailStore {
   }
 
   /**
+   *  影人相关播放量
+   */
+  @action
+  async getIpPeople(params) {
+    const { ipTypeSuperiorNumber, ipid }: { ipTypeSuperiorNumber: string, ipid: number } = params;
+    const { errorCode, result }: any = await getIpPeople({
+      ipTypeSuperiorNumber, ipid
+    });
+    if (errorCode === "200") {
+      this.detailList['ipPeopleList'] = result;
+    }
+  }
+
+  /**
    * 下载
    */
   @action
   async getDownload({ ipid }: { ipid: number }) {
     const { errorCode, result }: any = await getDownload(ipid);
     errorCode === "200" && result;
-  }
-
-  @action
-  async ipStarDetail(params) {
-    const { userGuid, ipid }: { userGuid?: string, ipid: number } = params;
-    const { errorCode, result }: any = await getStarDetail({
-      userGuid, ipid
-    });
-    if (errorCode === "200") {
-      const ipStarDetail: object[] = [];
-      let ipStarObj: object;
-      ipStarObj = result;
-      ipStarDetail.push(ipStarObj);
-      this.ipStarList = ipStarDetail;
-      ipStarDetail.forEach((item: any) => {
-        this.starList['followStatus'] = item.isFollowed;
-        this.starList['ipName'] = item.ipName;
-        if (item.coBrands !== null) {
-          this.starList['coBrands'] = item.coBrands.dataNumber;
-        }
-      });
-
-    }
   }
 
   /**
@@ -234,14 +311,14 @@ class DetailStore {
    * 关键词云
    */
   @action
-  async getWordData({ ipid }: { ipid: number }) {
-    const { errorCode, result }: any = await getWordCloub({
+  async getWordData({ userGuid, ipid }: { userGuid: string, ipid: number }) {
+    const { errorCode, result: { data, errorCode: ecode } }: any = await getWordCloub({
+      userGuid,
       ipid
     });
     let wordCloudData: object[] = [];
-    if (errorCode === "200") {
-      this.detailList['ipWordCloudData'] = result;
-      result.forEach((it) => {
+    if (errorCode === "200" && ecode === 200) {
+      data.forEach((it) => {
         let obj: IObj = {
           name: it.keywordName,
           value: this.randomData(),
@@ -279,55 +356,24 @@ class DetailStore {
    */
   @action
   async getDetailTotal(params) {
-    const { typeId, ipid }: { typeId: number, ipid: number } = params;
+    const { ipTypeSuperiorNumber, ipid }: { ipTypeSuperiorNumber: number, ipid: number } = params;
     const { errorCode, result }: any = await getTotalData({
-      typeId,
+      ipTypeSuperiorNumber,
       ipid,
     });
     if (errorCode === "200") {
-      // 全网搜索值5、全网资讯值13、微博粉丝数14、合作品牌数 31
-      if (typeId === 5) {
-        this.ipTotalData['baiduIndex'] = result;
-      } else if (typeId === 13) {
-        this.ipTotalData['baiduInformation'] = result;
-      } else if (typeId === 14) {
-        this.ipTotalData['blogFans'] = result;
-      } else if (typeId === 31) {
-        this.ipTotalData['cooperativeBrands'] = result;
-      }
-
-    }
-    this.detailList['ipTotalData'] = result;
-  }
-
-  /**
-   * 新闻舆情 默认4个(相关动态 默认2个)
-   */
-  async getNewAbout(params) {
-    const { ipid, typeId, currentPage, pageSize }: { ipid: number, typeId: number, currentPage?: number, pageSize?: number } = params;
-    const { errorCode, result }: any = await getNewsData({
-      ipid, typeId, currentPage, pageSize
-    });
-    if (errorCode === "200") {
-      if (pageSize === 4) {
-
-        this.detailList['ipNewData'] = result;
-        console.log(this.detailList['ipNewData']);
-      } else {
-        this.starList['ipNewDataAbout'] = result;
-      }
+      this.ipTotalData = result;
     }
   }
 
   /**
-   * 详情页-粉丝画像、地区分布
+   * 详情页-评估数据--受众画像（1 年龄,2 性别），地区分布（3 省份 ，4 区域）；
    */
   async getFansAreaData(params) {
-    const { ipid, typeId }: { ipid: number, typeId: number } = params;
-    const { errorCode, result }: any = await getFansArea({
-      ipid, typeId
+    const { userGuid, ipid, typeId }: { userGuid: string, ipid: number, typeId: number } = params;
+    const { errorCode, result: { errorMsg, data, errorCode: ecode } }: any = await getFansArea({
+      userGuid, ipid, typeId
     });
-
     let ipSexData: object[] = [];
     let ipProvinceData: object[] = [];
     let ipAreaData: object[] = [];
@@ -338,17 +384,17 @@ class DetailStore {
     let xArea: string[] = [];
     let yArea: string[] = [];
 
-    if (errorCode === "200" && result) {
+    if (errorCode === "200" && ecode > 0) {
       // 1年龄，2性别，3地区，4区域
-      if (typeId === 1 && result) {
-        result.forEach((it) => {
+      if (typeId === 1 && data) {
+        data.forEach((it) => {
           ageData.push(it.dataNumber);
           agePercent.push(it.dataType);
         });
         this.detailList['ageData'] = ageData.reverse();
         this.detailList['agePercent'] = agePercent.reverse();
-      } else if (typeId === 2 && result) {
-        result.forEach((it) => {
+      } else if (typeId === 2 && data) {
+        data.forEach((it) => {
           let obj: IObj = {
             value: it.dataNumber,
             name: it.dataType,
@@ -356,8 +402,8 @@ class DetailStore {
           ipSexData.push(obj);
         });
         this.detailList['ipSexData'] = ipSexData;
-      } else if (typeId === 3 && result) {
-        result.forEach((it) => {
+      } else if (typeId === 3 && data) {
+        data.forEach((it) => {
           let obj: IObj = {
             value: it.dataNumber,
             name: it.dataType.replace(/\省|\市/g, ''),
@@ -376,7 +422,7 @@ class DetailStore {
         this.detailList['xProvince'] = xProvince.reverse();
         this.detailList['yProvince'] = yProvince.reverse();
       } else {
-        result.forEach((it) => {
+        data.forEach((it) => {
           let obj: IObj = {
             value: it.dataNumber,
             name: it.dataType,
@@ -390,6 +436,45 @@ class DetailStore {
         this.detailList['xArea'] = xArea.reverse();
         this.detailList['yArea'] = yArea.reverse();
       }
+    } else {
+      return errorMsg;
+    }
+  }
+
+  /**
+   * 详情页-评估数据- 商业价值评估模型
+   */
+  async getBusinessData(params, type) {
+    const { userGuid, ipid, ipTypeSuperiorNumber }: { userGuid: string, ipid: number, ipTypeSuperiorNumber: number } = params;
+    const { errorCode, result: { data, errorCode: ecode, errorMsg } }: any = await getBusniess({
+      userGuid, ipid, ipTypeSuperiorNumber
+    });
+
+    if (errorCode === "200" && ecode > 0) {
+      if (type === 'people') {
+
+        this.businessData = [
+          ...this.businessData,
+          data.arithmaticHotspotPrice,
+          data.mediaAnalysis,
+          data.reputationNumber,
+          data.precisionNumber,
+          data.endorsementNumber,
+          data.potential,
+        ];
+
+      } else {
+        this.businessData = [
+          ...this.businessData,
+          data.arithmaticHotspotPrice,
+          data.mediaAnalysis,
+          data.potential,
+        ];
+
+      }
+
+    } else {
+      return { errorMsg };
     }
   }
 
@@ -407,6 +492,25 @@ class DetailStore {
       return { message: result.errorMsg };
     }
   }
+
+  /**
+   * 新闻舆情 默认4个(相关动态 默认2个)
+   */
+  async getNewAbout(params) {
+    const { ipid, typeId, currentPage, pageSize }: { ipid: number, typeId: number, currentPage?: number, pageSize?: number } = params;
+    const { errorCode, result }: any = await getNewsData({
+      ipid, typeId, currentPage, pageSize
+    });
+    if (errorCode === "200") {
+      if (pageSize === 4) {
+
+        this.detailList['ipNewData'] = result;
+      } else {
+        this.starList['ipNewDataAbout'] = result;
+      }
+    }
+  }
+
 }
 
 export default new DetailStore();

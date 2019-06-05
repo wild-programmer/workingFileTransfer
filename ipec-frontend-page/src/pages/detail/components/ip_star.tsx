@@ -8,7 +8,7 @@ import EchartBarSpecial from "@components/echart_bar_special";
 import EchartBarSpecial2 from "@components/echart_bar_special2";
 import EchartWordcloud from "@components/echart_wordcloud";
 import ic_case from "@assets/images/ip_detail/ic_case.svg";
-import ic_web from "@assets/images/ip_detail/ic_webo.svg";
+// import ic_web from "@assets/images/ip_detail/ic_webo.svg";
 import ic_rdzs from "@assets/images/ip_detail/ic_rdzs.svg";
 import ic_media from "@assets/images/ip_detail/ic_media.svg";
 import ic_area from "@assets/images/ip_detail/ic_area.svg";
@@ -338,7 +338,7 @@ export default class IpStar extends React.Component<IpStarProps, IpStarState> {
 
   render() {
     const { cityAreaNum, hotCurrent, blogCurrent, mediaCurrent, fansCurrent, fansDayNumber, hotDayNumber, blogDayNumber, mediaDayNumber, flag } = this.state;
-    const { detail, id } = this.props;
+    const { detail, id, ipTypeNumber } = this.props;
     const {
       ipStarList,
       detailList: {
@@ -393,7 +393,7 @@ export default class IpStar extends React.Component<IpStarProps, IpStarState> {
                     <div>
                       <div className="first-line flex-row align-items-end justify-content-between">
                         <div>
-                          <span className="ip-title">{item.ipName}</span>
+                          <span className="ip-title word-ellipsis">{item.ipName}</span>
                           {flag === true &&
                           <span className="ip-care-status active " onClick={async () => {
                             if (sessionStorage.getItem("user") !== null) {
@@ -403,7 +403,7 @@ export default class IpStar extends React.Component<IpStarProps, IpStarState> {
                             }
                             await this._getStatus(detail, id, 0);
                           }}>
-                              <i className="iconfont ic_follow icon-ic_follow1"/>已关注
+                              <i className="iconfont ic_follow iconic_praise"/>已关注
                             </span>
                           }
                           {flag === false &&
@@ -415,7 +415,7 @@ export default class IpStar extends React.Component<IpStarProps, IpStarState> {
                             }
                             await this._getStatus(detail, id, 1);
                           }}>
-                            <i className="iconfont ic_follow icon-ic_follow1"/>加入关注
+                            <i className="iconfont ic_follow iconic_praise"/>加入关注
                           </span>
                           }
                         </div>
@@ -468,7 +468,7 @@ export default class IpStar extends React.Component<IpStarProps, IpStarState> {
                             <p className="word-ellipsis">{i.postTitle}</p>
                             <p className="attention  flex-row justify-content-between">
                             <span
-                              className="attention_num iconfont ic_praise icon-ic_praise">{i.portalPostLikeCount}</span>
+                              className="attention_num iconfont ic_praise iconic_praise">{i.portalPostLikeCount}</span>
                               <span
                                 className="date ">{i.postSource}&nbsp;|&nbsp;{moment(i.createDate).format('YYYY/MM/DD')}</span>
                             </p>
@@ -697,7 +697,7 @@ export default class IpStar extends React.Component<IpStarProps, IpStarState> {
               </div>
               <div className="module-box">
                 <p className="area-title">
-                  <img src={ic_web} alt=""/>
+                  {/*<img src={ic_web} alt=""/>*/}
                   热议趋势
                 </p>
                 <div className="area-content blog-content">
@@ -734,7 +734,7 @@ export default class IpStar extends React.Component<IpStarProps, IpStarState> {
               </div>
               <div className="module-box">
                 <p className="area-title">
-                  <img src={ic_web} alt=""/>
+                  {/*<img src={ic_web} alt=""/>*/}
                   粉丝趋势
                 </p>
                 <div className="area-content blog-content">
