@@ -1,0 +1,344 @@
+@import "var";
+@import "app";
+
+.header-container {
+  background-color: #fff;
+  position: relative;
+  width: 100%;
+  margin: auto;
+  height: 0.8rem;
+  letter-spacing: 0;
+  z-index: 1;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1);
+
+
+  .nav-link {
+    color: #999;
+    font-size: 0.16rem;
+
+    padding: 0.256rem 0.16rem;
+
+    &:hover {
+      color: #6248FF;
+    }
+  }
+
+  .logo {
+    margin-right: 0.16rem;
+  }
+
+  .nav-item {
+    position: relative;
+
+    .nav-link {
+      color: #9999;
+    }
+
+    .main-top-hover {
+      display: none;
+      flex-wrap: wrap;
+      width: 3.6rem;
+      background-color: white;
+      position: absolute;
+      margin-top: 1px;
+      margin-left: -0.16rem;
+      z-index: 10;
+      overflow: hidden;
+
+      .hover-sub-item {
+        display: flex;
+        width: 1.18rem;
+        padding: 0.14rem 0.1rem 0.14rem 0.21rem;
+        cursor: pointer;
+        text-align: left;
+        line-height: normal;
+        font-size: 0.16rem;
+        color: #888;
+
+        .icon-span {
+          padding-right: 5px;
+          font-size: inherit;
+        }
+
+        .sub-type-a {
+          font-size: inherit;
+          color: inherit;
+          font-weight: 500;
+        }
+      }
+
+      .hover-sub-item:hover {
+        color: $limit-purple-text;
+      }
+    }
+
+    .main-top-hover > .hover-sub-item {
+      background: url(../images/sub_type/dhxx.jpg) left center no-repeat;
+    }
+
+    .main-top-hover > .hover-sub-item:nth-child(3n + 1) {
+      background: none;
+    }
+
+  }
+
+  .nav-item:hover {
+    .main-top-hover {
+      display: flex;
+    }
+  }
+
+  .nav-item {
+    //.active {
+    //  color: #6248FF;
+    //  font-weight: 600;
+    //}
+  }
+
+
+  .search-input-area {
+    margin-left: 0.16rem;
+    position: relative;
+
+    i.icon-search {
+      position: absolute;
+      font-size: 0.288rem;
+      right: 0.08rem;
+      color: $limit-input-placeholder-color;
+      cursor: pointer;
+    }
+
+    .search_pulldown {
+      width: 3.69rem;
+      min-height: 48px;
+      position: absolute;
+      right: 0;
+      top: 0.5rem;
+      background: #fff;
+      box-shadow: 0 4px 9px 0 rgba(195, 205, 222, 0.6);
+      border-radius: 0 0 6px 6px;
+      overflow: hidden;
+      //display: none;
+      ul {
+        li {
+          height: 0.48rem;
+          line-height: 0.48rem;
+          cursor: pointer;
+          padding-left: 0.42rem;
+
+          a {
+            color: #6b7177;
+          }
+        }
+
+        li:hover {
+          background-color: #f1f3f5;
+        }
+
+        .hot-title {
+          cursor: default;
+          color: #adb5bd;
+        }
+
+        .hot-title:hover {
+          background: #fff;
+        }
+      }
+    }
+
+  }
+
+  .search-input {
+    border-radius: 4px;
+    width: 3.69rem;
+    height: 0.44rem;
+    //border: none;
+    border: 1px solid #E9ECEF;
+    padding-left: 0.16rem;
+    font-size: 0.16rem;
+    color: $limit-input-placeholder-color;
+    //background: rgba(0, 0, 0, .2);
+    outline: none;
+  }
+
+  .search-input::-webkit-input-placeholder {
+    color: #CED4DA;
+  }
+
+  .search-input::-ms-input-placeholder {
+    color: #ced4da;
+  }
+
+  .search-input::-moz-placeholder {
+    color: #ced4da;
+  }
+
+  .user-operation {
+    margin-left: 0.32rem;
+    background-image: linear-gradient(89deg, #F760D5 0%, #FF6B6B 100%);
+    border-radius: 4px;
+    color: #f5f5f5;
+    padding: 11px 29px;
+    font-weight: lighter;
+
+    .register-btn {
+      font-size: 0.16rem;
+      color: inherit;
+      font-weight: normal;
+      padding-right: 5px;
+    }
+
+    .separate-symbol {
+      font-size: 0.16rem;
+    }
+
+    .register-btn:hover {
+      text-decoration: none;
+    }
+
+    .login-btn {
+      font-size: 0.16rem;
+      color: inherit;
+      font-weight: normal;
+      padding-left: 5px;
+    }
+
+    .login-btn:hover {
+      text-decoration: none;
+    }
+  }
+
+  .login-success {
+    .login-add {
+      height: 0.38rem;
+      float: left;
+      width: 0.38rem;
+      cursor: pointer;
+      position: relative;
+      margin-left: 15px;
+      margin-top: 7px;
+
+      img {
+        width: 0.22rem;
+        height: 0.22rem;
+      }
+
+      .add-ip {
+        font-size: 12px;
+        color: #CED4DA;
+        margin-left: -5px;
+      }
+    }
+
+    .login-ring {
+      height: 0.38rem;
+      float: left;
+      width: 0.38rem;
+      cursor: pointer;
+      position: relative;
+      margin-left: 5px;
+      margin-top: 7px;
+
+      img {
+        width: 0.22rem;
+        height: 0.22rem;
+      }
+
+      .add-ip {
+        font-size: 12px;
+        color: #CED4DA;
+        margin-left: -1.5px;
+      }
+    }
+
+    .login-user {
+      height: 0.45rem;
+      width: 0.45rem;
+      float: left;
+      cursor: pointer;
+      position: relative;
+      margin-left: 5px;
+      margin-top: 5px;
+
+      img {
+        width: 0.48rem;
+        height: 0.48rem;
+        border-radius: 50%;
+      }
+    }
+
+    .login-hover {
+      z-index: 99;
+      width: 1.8rem;
+      height: 2.8rem;
+      position: absolute;
+      background: #fff;
+      top: 0.432rem;
+      right: 0;
+      //top:0.6rem;
+      border-radius: 0.04rem;
+      box-shadow: 0 4px 9px rgba(195, 205, 222, 0.6);
+
+      li {
+        height: 0.56rem;
+        width: 100%;
+        padding-left: 0.24rem;
+        padding-right: 0.24rem;
+        line-height: 0.56rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.16rem;
+        font-weight: 500;
+        text-align: left;
+        color: #343a40;
+
+        .hover-li {
+          font-size: 0.14rem;
+          text-align: left;
+          color: #6b7177;
+          display: block;
+          height: 0.56rem;
+          line-height: 0.56rem;
+          font-weight: normal;
+        }
+      }
+
+      li:hover {
+        background-color: #f8f9fa
+      }
+    }
+
+    .login-hide {
+      display: none;
+    }
+  }
+}
+
+.aboutRule {
+  .header-container {
+    background-color: #53575d !important;
+    min-width: 1280px;
+    margin: auto;
+    // justify-content: flex-start !important;
+    .nav-item {
+      &.logo {
+        margin-right: 85px;
+        width: 315px;
+      }
+
+      &.search-input-area {
+        width: 735px;
+        margin-left: 0;
+
+        .search-input {
+          visibility: hidden;
+        }
+      }
+    }
+
+    .login-success {
+      display: none;
+    }
+  }
+}

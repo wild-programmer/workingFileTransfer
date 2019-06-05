@@ -1,0 +1,10 @@
+export { default as Movie } from "./movie";
+export { default as TVSeries } from "./tv_series";
+export { default as Variety } from "./variety";
+export { default as Cartoon } from "./cartoon";
+export { default as Comic } from "./comic";
+export { default as Avatar } from "./avatar";
+export { default as Book } from "./book";
+export { default as People } from "./people";
+export { default as Cultural } from "./cultural";
+export { default as Fiction } from "./fiction";

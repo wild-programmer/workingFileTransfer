@@ -1,0 +1,114 @@
+.contrast{
+    padding-top:0.4rem;
+    .contrast_product{
+        text-align: center;
+        margin-bottom: 0.4rem;
+        >div{
+            width:2rem;
+            height:2.46rem;
+            margin: 0 0.12rem;
+            display: inline-block;
+            img{
+                width: 100%;
+                height: 2rem;
+            }
+            .product_tool{
+                width: 100%;
+                height: 0.46rem;
+                background: #F5F5F5;
+                line-height: 0.46rem;
+                text-align: left;
+                span{
+                    font-size: 0.16rem;
+                    padding-left: 0.18rem;
+                }
+                .icon{
+                    float: right;
+                    color: red;
+                    margin-right: 0.22rem;         
+                    cursor: pointer;           
+                }
+            } 
+        }
+    }
+
+    .class_fication{
+        text-align: center; 
+        line-height: 0.8rem;
+        height: 0.8rem; 
+        background: #F8F8F8;
+        border: 1px solid #E5E5E5;
+        .item{
+            display: inline-block;
+            width: 3.8rem; 
+            box-sizing: border-box;
+            height: 0.8rem;
+            line-height: 0.8rem;
+            &.active{
+                border-bottom: 2px solid #6248FF;  
+                span{
+                    color: #6248FF;
+                }
+            }
+            span{ 
+                font-size: 0.24rem; 
+                margin-left: 10px;
+                color: #666666;
+                letter-spacing: 0;
+            } 
+            .icon{
+                margin: 0;
+                font-size: 0.32rem;
+            }
+        }
+    }
+    .Survey_data{
+        // padding: 0 0.7rem;
+        width: 11.4rem;
+        margin: 0 auto;
+        p{
+            font-size: 0.18rem;
+            color: #343A40;
+            letter-spacing: 0;
+            line-height: 0.25rem;
+            padding: 0.4rem 0 0.2rem 0;
+            margin: 0;
+            .icon{
+                font-size: 0.2rem;
+                color: #8a54be;
+            }
+        }
+        table{
+            width: 100%;
+            text-align: center; 
+            th{
+                height: 0.48rem;
+                line-height: 0.48rem;
+                font-size: 0.14rem;
+                color: #666666;
+                border: 1px solid #E5E5E5;
+            }
+            td{
+                border: 1px solid #E5E5E5;
+                font-size: 0.24rem;
+                color: #343A40;
+                height: 1.1rem;
+                line-height: 1.1rem;
+                .icon{
+                    font-size: 0.2rem;
+                }
+            }
+        }
+        .serche{
+            width: 100%;
+            height: 4.72rem;
+            // background-color: #ccc;            
+        }
+    }
+}
+
+@media (max-width: 1141px) {
+    .contrast .class_fication{
+        height: auto !important;
+    }
+  }

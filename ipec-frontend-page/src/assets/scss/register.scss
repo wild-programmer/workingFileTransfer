@@ -1,0 +1,468 @@
+@import "var";
+
+a:link, a:visited {
+  text-decoration: none;
+  color: #444;
+}
+
+a:hover {
+  text-decoration: none;
+  color: #8a54be;
+}
+
+li {
+  list-style: none;
+}
+
+.container-all {
+  width: 100%;
+  height: 100vh;
+  margin: auto;
+  padding-top: 0.48rem;
+  background: linear-gradient(to right, #3c1371, #744ca1);
+  overflow: hidden;
+
+  .container-register {
+    width: 12rem;
+    height: 5.8rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-left: -6rem;
+    margin-top: -2.9rem;
+
+    .register_img {
+      width: 6.07rem;
+      height: 5.02rem;
+      position: absolute;
+      background-image: url("../images/registerbg.png");
+    }
+
+    .register-content {
+      width: 4.2rem;
+      height: 5.15rem;
+      right: 0.2rem;
+      top: 0.1rem;
+      position: absolute;
+      background-image: url("../images/ic_register.png");
+      border-radius: 8px;
+
+      img {
+        width: 1.2rem;
+        height: 0.42rem;
+        margin: 0.36rem auto 0.28rem auto;
+        display: block;
+      }
+
+      .login-title-area {
+        position: relative;
+        display: flex;
+        width: 95%;
+        flex-direction: row;
+        justify-content: center;
+        border-bottom: 1px dotted #ced4da;
+        margin-bottom: 0.32rem;
+        box-shadow: none;
+        margin-left: 0.11rem;
+
+        .login-title-area > span {
+          width: 0.0256rem;
+          height: 0.0256rem;
+          z-index: 1;
+          background-color: #8a54be;
+          border-radius: 50%;
+          position: absolute;
+          left: -8px;
+          bottom: -8px;
+        }
+
+        .login-title-area > span:last-child {
+          width: 0.0256rem;
+          height: 0.0256rem;
+          z-index: 1;
+          background-color: #8a54be;
+          border-radius: 50%;
+          position: absolute;
+          left: auto;
+          right: -8px;
+          bottom: -8px;
+        }
+
+        .login-title {
+          width: 1.84rem;
+          height: auto;
+          text-align: center;
+          padding-bottom: 0.1rem;
+          position: relative;
+          bottom: -1px;
+          display: flex;
+          border-bottom: 1px solid #8a54be;
+          cursor: pointer;
+
+          .mobile_img {
+            width: 0.21rem;
+            margin: 0 10px 0 0.4rem;
+            height: 0.26rem;
+          }
+        }
+
+        .login-title-email {
+          width: 1.84rem;
+          height: auto;
+          text-align: center;
+          padding-bottom: 0.1rem;
+          position: relative;
+          bottom: -1px;
+          display: flex;
+          border-bottom: 1px solid #8a54be;
+          cursor: pointer;
+
+          .mobile_img {
+            width: 0.21rem;
+            margin: 0 0.1rem 0 0.4rem;
+            height: 0.26rem;
+          }
+        }
+
+        .input-mobile-display {
+          width: 1.84rem;
+          height: auto;
+          text-align: center;
+          padding-bottom: 0.1rem;
+          position: relative;
+          bottom: -1px;
+          display: flex;
+          cursor: pointer;
+
+          .mobile_img {
+            width: 0.21rem;
+            margin: 0 0.1rem 0 0.4rem;
+            height: 0.26rem;
+          }
+        }
+      }
+
+      .input-form-mobile {
+        width: 3.2rem;
+        margin: 0 auto;
+
+        .input-area {
+          margin-bottom: 0.16rem;
+
+          input {
+            width: 3.2rem;
+            height: 0.416rem;
+            padding: 6px 0.7rem;
+          }
+
+          input::placeholder {
+            font-size: 0.14rem;
+          }
+        }
+
+        .input-pass {
+          margin-bottom: 0.16rem;
+
+          input {
+            width: 3.2rem;
+            height: 0.416rem;
+          }
+
+          input::placeholder {
+            font-size: 0.14rem;
+          }
+        }
+
+        .isPhone {
+          span {
+            position: absolute;
+            font-size: 0.14rem;
+            color: #343a40;
+            margin: 0.12rem 0 0 0.16rem;
+            border-right: solid 1px #ced4da;
+            width: 0.44rem;
+            height: 0.24rem;
+            padding-top: 3px;
+          }
+        }
+
+        .code-area {
+          display: flex;
+          margin-bottom: 0.16rem;
+          width: 3.2rem;
+
+          input {
+            width: 68%;
+            height: 0.416rem;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+
+          input::placeholder {
+            font-size: 14px;
+          }
+
+          button {
+            width: 50%;
+            height: 0.416rem;
+            background-image: linear-gradient(-95deg, #c560ef 0%, #8a54be 100%);
+            border: none;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            font-weight: normal;
+            font-size: 0.13rem;
+            outline: none;
+            box-shadow: none;
+          }
+        }
+
+        .form-operation {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          width: 100%;
+
+          a {
+            font-size: 0.12rem;
+            color: #8a54be;
+            letter-spacing: 0;
+            line-height: 0.16rem;
+          }
+
+          .thirty-checkbox {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+
+            span {
+              margin-left: 0.032rem;
+              font-size: 0.12rem;
+              color: #343a40;
+              letter-spacing: 0;
+              line-height: 0.16rem;
+            }
+
+            a {
+              margin-left: 0.032rem;
+              font-size: 0.12rem;
+              color: #8a54be;
+              letter-spacing: 0;
+              line-height: 0.16rem;
+            }
+
+            .check-img {
+              width: 0.16rem;
+              height: 0.16rem;
+              cursor: pointer;
+              background-image: url("../images/check.jpg");
+            }
+          }
+        }
+
+        .login-btn-area {
+          margin-top: 0.08rem;
+          background-image: linear-gradient(-95deg, #c560ef 0%, #8a54be 100%);
+          width: 3.2rem;
+          height: 0.416rem;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: none;
+          border-radius: 8px;
+          outline: none;
+
+          span {
+            font-size: 0.16rem;
+            color: white;
+            letter-spacing: 0;
+            text-align: center;
+          }
+        }
+
+        .no-account {
+          font-size: 0.12rem;
+          color: #343a40;
+          letter-spacing: 0;
+          line-height: 0.0256rem;
+          text-align: center;
+
+          a {
+            color: #8a54be;
+          }
+        }
+      }
+
+      .input-form-email {
+        width: 3.2rem;
+        margin: 0 auto;
+
+        .input-area {
+          margin-bottom: 0.16rem;
+
+          input {
+            width: 3.2rem;
+            height: 0.416rem;
+            padding: 6px 0.7rem;
+          }
+
+          input::placeholder {
+            font-size: 0.14rem;
+          }
+        }
+
+        .input-pass {
+          margin-bottom: 0.16rem;
+
+          input {
+            width: 3.2rem;
+            height: 0.416rem;
+          }
+
+          input::placeholder {
+            font-size: 0.14rem;
+          }
+        }
+
+        .isPhone {
+          span {
+            position: absolute;
+            font-size: 0.14rem;
+            color: #343a40;
+            margin: 0.12rem 0 0 0.16rem;
+            border-right: solid 1px #ced4da;
+            width: 0.44rem;
+            height: 0.24rem;
+            padding-top: 3px;
+          }
+        }
+
+        .code-area {
+          display: flex;
+          margin-bottom: 0.16rem;
+          width: 3.2rem;
+
+          input {
+            width: 100%;
+            height: 0.416rem;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+
+          .code-input{
+            width: 68%;
+            height: 0.416rem;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+
+          input::placeholder {
+            font-size: 0.14rem;
+          }
+
+          button {
+            width: 50%;
+            height: 0.416rem;
+            background-image: linear-gradient(-95deg, #c560ef 0%, #8a54be 100%);
+            border: none;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            font-weight: normal;
+            font-size: 0.13rem;
+            outline: none;
+            box-shadow: none;
+          }
+        }
+
+        .form-operation {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          width: 100%;
+
+          a {
+            font-size: 0.12rem;
+            color: #8a54be;
+            letter-spacing: 0;
+            line-height: 0.16rem;
+          }
+
+          .thirty-checkbox {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+
+            span {
+              margin-left: 0.032rem;
+              font-size: 0.12rem;
+              color: #343a40;
+              letter-spacing: 0;
+              line-height: 0.16rem;
+            }
+
+            a {
+              margin-left: 0.032rem;
+              font-size: 0.12rem;
+              color: #8a54be;
+              letter-spacing: 0;
+              line-height: 0.16rem;
+            }
+
+            .check-img {
+              width: 0.16rem;
+              height: 0.16rem;
+              cursor: pointer;
+              background-image: url("../images/check.jpg");
+            }
+          }
+        }
+
+        .login-btn-area {
+          margin-top: 0.08rem;
+          background-image: linear-gradient(-95deg, #c560ef 0%, #8a54be 100%);
+          width: 3.2rem;
+          height: 0.416rem;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: none;
+          border-radius: 0.08rem;
+          outline: none;
+          box-shadow: none;
+
+          span {
+            font-size: 0.16rem;
+            color: white;
+            letter-spacing: 0;
+            text-align: center;
+          }
+        }
+
+        .no-account {
+          font-size: 0.12rem;
+          color: #343a40;
+          letter-spacing: 0;
+          text-align: center;
+
+          a {
+            color: #8a54be;
+          }
+        }
+      }
+
+      .input-display {
+        display: none;
+      }
+    }
+
+    .bottom-txt {
+      position: absolute;
+      margin-left: 8.16rem;
+      font-size: 0.12rem;
+      text-align: left;
+      color: #adb5bd;
+      right: 1.3rem;
+      bottom: 0.22rem;
+    }
+  }
+}
+

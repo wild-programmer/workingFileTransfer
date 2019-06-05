@@ -1,0 +1,48 @@
+.echart-radar{
+    width: 100%;
+    position: relative;
+    .redar{
+        width: 5.9rem; 
+    }
+    .echart-news{
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding-left: 5.9rem;
+        padding-top: 1.39rem;
+        >div{
+            float: left;
+            margin-right: 0.82rem;            
+            p{
+                width: auto;
+                text-align: left;
+                margin-bottom: 0.1rem;
+            }
+            .score{
+                color:#FF6666;
+                font-size: 0.3rem;
+                line-height: 0.42rem;
+            }
+            &.margin-right0{
+                margin-right: 0;
+            }
+        }
+    }
+}
+.echart-barRadius{
+    width: 100%;
+    >div{
+        display: inline-block;
+        width:50%; 
+        div{
+            height: 60px !important;
+        }
+        .heightAuto{
+            height: 78px !important;
+            div{
+                height: 78px !important;
+            }
+        }
+    }
+}

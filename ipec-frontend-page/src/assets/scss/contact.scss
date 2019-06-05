@@ -1,0 +1,214 @@
+@import "~bootstrap/scss/bootstrap";
+@import "var";
+@import "../fonts/iconfont.css";
+.contact-container{
+  background-color: #f1f3f5;
+  li {
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+  }
+  .static-menu ul,
+  ul {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+  }
+
+  table {
+    padding: 0px;
+    margin: 0px;
+  }
+
+  tr {
+    padding: 0px;
+    margin: 0px;
+  }
+
+  td {
+    padding: 0px;
+    margin: 0px;
+  }
+
+  img {
+    padding: 0px;
+    margin: 0px;
+    border: 0;
+  }
+
+  div {
+    margin: 0px;
+    padding: 0px
+  }
+
+  form {
+    margin: 0px;
+    padding: 0px;
+  }
+
+  a {
+    text-decoration: none;
+    color: #444444;
+  }
+
+  p {
+    margin: 0px;
+    padding: 0px;
+  }
+
+  input {
+    margin: 0px;
+    padding: 0px;
+  }
+
+  .clear {
+    clear: both;
+    height: 0px;
+    margin: 0px;
+    padding: 0px;
+    width: 0px;
+    border: none;
+    overflow: hidden;
+  }
+
+  a:link,
+  a:visited {
+    text-decoration: none;
+    /*超链接无下划线*/
+  }
+
+  a:hover {
+    text-decoration: none;
+    /*鼠标放上去有下划线*/
+  }
+  .clearfix:after {
+    content: '';
+    clear: both;
+    overflow: hidden;
+    display: block;
+    height: 0;
+  }
+  .h1, .h2, .h3, h1, h2, h3 {
+    margin-top: 0;
+  }
+
+  .main {
+    width: 1280px;
+    padding: 70px;
+    min-height: 600px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .static-menu {
+    position: absolute;
+    background-color: #fff;
+    top: 70px;
+    left: 70px;
+  }
+
+  .static-menu li a {
+    display: block;
+    width: 220px;
+    color: #6b7177;
+    font-size: 16px;
+    padding: 20px 30px;
+    position: relative;
+  }
+
+  .static-menu li a:hover, .static-menu li .curr {
+    color: #8a54be;
+    font-weight: bold;
+  }
+
+  .static-menu li a:hover::before, .static-menu li .curr::before {
+    content: '';
+    width: 4px;
+    height: 48px;
+    background-color: #8a54be;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    margin-top: -24px;
+  }
+
+  .static-container {
+    // position: absolute;
+    // right: 70px;
+    margin-left: 250px;
+    width: 888px; 
+    background-color: #fff;
+    border-radius: 6px;
+  }
+
+  .static-container h1 {
+    font-size: 16px;
+    line-height: 16px;
+    color: #343a40;
+    padding: 20px 50px;
+    border-bottom: 1px solid #868e96;
+    margin-bottom: 10px;
+  }
+
+  .container-inner {
+    padding: 20px 50px;
+  }
+
+  .container-inner p {
+    font-size: 16px;
+    color: #6b7177;
+    margin-bottom: 30px;
+  }
+
+  .container-inner p a {
+    color: #8a54be;
+  }
+
+  .container-inner h2 {
+    font-size: 20px;
+    color: #343a40;
+    margin-bottom: 20px;
+    line-height: 20px;
+    height: 25px;
+    font-weight: bold;
+  }
+
+  .container-inner h2::after {
+    content: '';
+    clear: both;
+    overflow: hidden;
+    display: block;
+    height: 0;
+  }
+
+  .container-inner h2::before {
+    display: inline-block;
+    width: 4px;
+    background-color: #8a54be;
+    height: 20px;
+    content: '';
+    float: left;
+    margin-right: 10px;
+  }
+
+  .container-inner li {
+    margin-bottom: 20px;
+  }
+
+  .container-inner li h3 {
+    font-size: 16px;
+    color: #6b7177;
+    margin-bottom: 10px;
+  }
+
+  .container-inner li div a {
+    color: #6b7177;
+    font-size: 16px;
+  }
+
+  .container-inner li div a:hover {
+    text-decoration: underline;
+    color: #8a54be;
+  }
+
+}

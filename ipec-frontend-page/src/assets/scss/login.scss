@@ -1,0 +1,163 @@
+@import "var";
+
+a:link, a:visited {
+  text-decoration: none;
+  color: #444;
+}
+
+a:hover {
+  text-decoration: none;
+  color: #8a54be;
+}
+
+
+.container-all {
+  width: 100%;
+  height: 100vh;
+  margin: auto;
+  padding-top: 0.48rem;
+  background: linear-gradient(to right, #3c1371, #744ca1);
+
+  .container-login {
+    width: 12rem;
+    height: 5.8rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-left: -6rem;
+    margin-top: -2.9rem;
+
+    .login_img {
+      width: 6.07rem;
+      height: 5.02rem;
+      position: absolute;
+      background-image: url("../images/loginbg.png");
+    }
+
+    .login-content {
+      width: 4.2rem;
+      height: 4.8rem;
+      right: 0.2rem;
+      top: 0.1rem;
+      position: absolute;
+      background-image: url("../images/ic_register.png");
+      border-radius: 0.08rem;
+
+      img {
+        width: 1.2rem;
+        height: 0.42rem;
+        margin: 0.36rem auto 0.28rem auto;
+        display: block;
+      }
+
+      .login-title-area {
+        position: relative;
+        display: flex;
+        width: 95%;
+        flex-direction: row;
+        justify-content: center;
+        border-bottom: 1px dotted #ced4da;
+        margin-top: 0.096rem;
+        margin-bottom: 0.08rem;
+        margin-left: 0.096rem;
+        box-shadow: none;
+
+        .login-title {
+          margin-bottom: 0.112rem;
+        }
+
+        .login-p-text {
+          font-weight: bold;
+        }
+      }
+
+      .input-area {
+        width: 3.2rem;
+        margin: 0.24rem auto;
+
+        input {
+          width: 3.2rem;
+          height: 0.448rem;
+        }
+
+        input::placeholder {
+          font-size: 0.14rem;
+        }
+      }
+
+      .form-operation {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 95%;
+        padding-right: 1rem;
+        margin-left: 0.5rem;
+
+        a {
+          font-size: 0.12rem;
+          color: #8a54be;
+          letter-spacing: 0;
+          line-height: 0.16rem;
+        }
+
+        .thirty-checkbox {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+
+          span {
+            margin-left: 0.032rem;
+            font-size: 0.12rem;
+            color: #343a40;
+            letter-spacing: 0;
+          }
+        }
+      }
+
+      .login-btn-area {
+        background-image: linear-gradient(-95deg, #c560ef 0%, #8a54be 100%);
+        border-radius: 6px;
+        width: 3.2rem;
+        height: 0.48rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0.208rem auto;
+      }
+
+      .btn-primary {
+        border: none;
+        outline: none;
+        box-shadow: none;
+        cursor: pointer;
+      }
+
+      .btn-primary:active{
+        box-shadow: none;
+      }
+
+      .no-account {
+        font-size: 0.12rem;
+        color: #343A40;
+        letter-spacing: 0;
+        width: 1.2rem;
+        margin: 0 auto;
+
+        a {
+          color: #8a54be;
+        }
+      }
+    }
+  }
+
+  .bottom-txt {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-left: 2.76rem;
+    margin-top: 2.3rem;
+    font-size: 0.12rem;
+    color: #adb5bd;
+  }
+}
+
