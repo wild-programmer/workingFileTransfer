@@ -1,0 +1,72 @@
+.echart_line_darren,
+.echart_bar_Category,
+.echart_bar_darren{
+    .redar{
+            width: 100%;
+            height: 4.72rem;  
+            background: #FFFFFF; 
+            cursor: pointer;
+            >div{
+                height: 100% !important;
+            }
+            canvas{
+                height: 100% !important;
+            }     
+    }
+}
+.echart_bar_Category >.redar{
+    height: 3.2rem; 
+}
+.echart_wordcloud_three{
+    width: 100%;
+    height: 100%;
+    position: relative;
+    .wordCloud{
+        width: 180px;
+        height: 180px; 
+        border-radius: 100%;
+        overflow: hidden;
+        position: absolute;  
+         >div{
+            height: 180px !important; 
+        }
+        &:nth-child(1){
+            left: 50%;
+            transform: translateX(-50%);
+            top: 10px;
+        }
+        &:nth-child(2){
+            left: 50%; 
+            top: 98px;
+        }
+        &:nth-child(3){
+            left: 50%;
+            transform: translateX(-100%);
+            top: 98px;
+        }
+    }
+    .tips{
+        width: 100%;
+        height: 20px;
+        line-height: 20px;
+        padding-left: 25px;
+        padding-top: 30px;
+        >div{
+            float: left;
+            margin-right: 30px;
+            .icon{
+                display:inline-block;
+                width: 15px;
+                height: 15px; 
+                background: #ccc;
+                border-radius: 50%;
+            }
+            span{
+                font-size: 14px;
+                color: #6B7177;
+                vertical-align: middle;
+            }
+        }
+    }
+}
+   

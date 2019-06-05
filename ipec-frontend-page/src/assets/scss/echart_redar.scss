@@ -1,47 +1,74 @@
 .echart-radar{
     width: 100%;
     position: relative;
+    padding-top: 30px; 
     .redar{
-        width: 5.9rem; 
+        width:100%; 
     }
     .echart-news{
         position: absolute;
-        left: 0;
+        right: 0;
         top: 0;
         width: 100%;
-        padding-left: 5.9rem;
-        padding-top: 1.39rem;
+        padding-left: 6.22rem;
+        padding-top: 0.39rem; 
         >div{
             float: left;
-            margin-right: 0.82rem;            
+            width: 170px;       
+            padding-top: 10px; 
             p{
                 width: auto;
                 text-align: left;
                 margin-bottom: 0.1rem;
+                font-size: 12px;
+                line-height: 20px;
+                color: #696969;
+                margin-top: 14.9px;
+                margin-bottom: 10px;
+                padding: 0;
             }
             .score{
                 color:#FF6666;
                 font-size: 0.3rem;
                 line-height: 0.42rem;
+                margin: 0;
             }
-            &.margin-right0{
-                margin-right: 0;
-            }
+            &.padding-left25{ 
+                padding-left: 25px;
+                box-sizing: border-box;
+            } 
+            &.padding-left35{ 
+                padding-left: 35px;
+                box-sizing: border-box;
+            } 
         }
     }
 }
 .echart-barRadius{
     width: 100%;
+    .barredius{
+        position: relative;
+        &::after{
+            content: '';
+            display: block;
+            width: 2px;
+            height:2.13rem ;
+            background-color: #E5E5E5;
+            position: absolute;
+            right: -1px;
+            top: 0.68rem;
+        }
+    }
     >div{
         display: inline-block;
         width:50%; 
-        div{
+        >div{
             height: 60px !important;
         }
         .heightAuto{
-            height: 78px !important;
-            div{
-                height: 78px !important;
+            height: 180px !important;
+            >div{
+                height: 100% !important; 
             }
         }
     }

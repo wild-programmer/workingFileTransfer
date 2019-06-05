@@ -85,7 +85,7 @@
               padding: 0.06rem 0.15rem;
               a{
                 cursor: pointer;
-                color:#8a54be;
+                color:#6248ff;
                 margin-right: 0.1rem;
               }
             }
@@ -173,7 +173,7 @@
       width:5.2rem;
       height: 3.6rem;
       overflow: auto;
-      background-image: linear-gradient(-95deg, #8A54BE 0%, #C560EF 100%);
+      background-image: linear-gradient(-95deg, #2853ff 0%, #933efe 100%);
       border-radius: 4px;
       text-align:center;
       margin: 0.2rem auto;
@@ -256,11 +256,11 @@
   padding: 0;
 }
 .btn-cancel{
-  border: 1px solid #8a54be;
+  border: 1px solid #6248ff;
   color: #8a54be;
 }
 .btn-submit{
   color: #fff;
-  background-image: linear-gradient(-95deg, #8A54BE 0%, #C560EF 100%);
+  background-image: linear-gradient(-95deg, #2853ff 0%, #933efe 100%);
 
 }

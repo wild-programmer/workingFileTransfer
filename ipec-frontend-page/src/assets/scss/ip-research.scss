@@ -6,34 +6,59 @@ li {
 }
 
 .bg-color {
-  background-color: #f2f3f5;
+
   .ip-research {
     width: 100%;
     background-color: #fff;
     margin-bottom: 0.2rem;
-
+     .no-result{
+       text-align: center;
+       margin: 0.4rem;
+     }
     .type-of {
       width: 100%;
       font-size: 0.14rem;
       font-weight: normal;
       text-align: left;
       color: #495057;
+      background: #F8F9FA;
+      padding-bottom: 0.2rem;
+
+      .type-tab {
+        line-height: 0.42rem;
+        height: 0.42rem;
+        width: 11.4rem;
+        margin: 0 auto;
+        //border-bottom: 2px solid #ced4da;
+        box-sizing: border-box;
+        padding-bottom: 0.08rem;
+        span{
+          display: inline-block;
+          height: 0.42rem;
+          margin-right: 0.4rem;
+          color: #343A40;
+          cursor: pointer;
+        }
+        .active{
+          color: $balance-color;
+          border-bottom: $balance-button-purple-bold;
+          box-sizing: border-box;
+          height: 0.42rem;
+        }
+      }
 
       .type-list {
-        border-bottom: solid 1px #ddd;
-        line-height: 0.52rem;
+        line-height: 0.28rem;
         width: 11.4rem;
-        margin: auto;
-
+        margin: 0 auto 0.08rem;
+        display: block;
+        overflow: hidden;
         .type-name {
           float: left;
-          //width: 1.5rem;
-          //padding-left: 0.7rem;
           text-align: left;
           background: none;
           position: relative;
-          font-weight: bold;
-          color: #2f3943;
+          color: #9B9B9B;
         }
 
         .type-ul {
@@ -41,13 +66,17 @@ li {
           margin-bottom: 0;
 
           li {
-            padding: 0 0.2rem;
+            padding: 0 0.1rem;
+            margin: 0 0.02rem;
             color: #7d8287;
+            cursor: pointer;
           }
 
-          li:hover,.active {
+          li:hover, .active {
+            background: #E9ECEF;
+            border-radius: 2px;
             cursor: pointer;
-            color: #8954be;
+            color: $balance-color;
           }
         }
       }
@@ -66,27 +95,30 @@ li {
       }
     }
 
-    .case-list-container{
-      background-color: #f2f3f5;
+    .case-list-container {
       .case-list {
-       width: 11.4rem;
+        width: 11.4rem;
         margin: auto;
         //padding-left: 0.72rem;
         padding-top: 0.368rem;
         display: flex;
         //justify-content: space-between;
         flex-wrap: wrap;
-
+        .case-introduce:nth-child(3n){
+          margin: 0 0 0.3rem;
+        }
         .case-introduce {
           width: 3.6rem;
           position: relative;
           display: inline-block;
-          margin: 0 0.1rem 0.3rem;
+          margin: 0 0.2rem 0.3rem 0;
+
           .case-top {
             width: 3.6rem;
             height: 2.4rem;
             display: inline-block;
             background: #e5e5e5;
+
             img {
               width: 100%;
               height: 100%;
@@ -95,7 +127,7 @@ li {
 
           .case-bottom {
             width: 3.6rem;
-            background-color: #fff;
+            background-color: #f8f8f8;
 
             .case-img {
               width: 0.6rem;
@@ -122,8 +154,9 @@ li {
                 margin-left: 0.896rem;
                 margin-top: -0.6rem;
               }
-              .title:hover{
-                color: #8a54be;
+
+              .title:hover {
+                //color: #8a54be;
               }
 
               .bottom-title {
@@ -136,10 +169,12 @@ li {
                   color: #343A40;
                   font-size: 0.14rem;
                 }
-                .active:before{
+
+                .active:before {
                   color: #FB3D3D;
                 }
-                .icon-ic_like:before{
+
+                .iconic_praise:before {
                   margin: 0 0.04rem 0 0;
                   font-size: 0.16rem;
                 }
@@ -181,7 +216,8 @@ li {
           }
         }
       }
-      .loading-more{
+
+      .loading-more {
         width: 11.4rem;
         height: 0.6rem;
         line-height: 0.6rem;

@@ -6,7 +6,7 @@
   background-color: white;
 
   .select-bar-area {
-    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1);
+    //box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1);
 
     .select-bar {
       background-color: $limit-gray-bg-color;
@@ -49,14 +49,12 @@
 
         .operation-type {
           display: flex;
-
+          align-items: center;
           .classify-type-item {
             display: flex;
             width: 0.48rem;
             padding-top: 4px;
-            padding-bottom: 4px;
-            margin-top: 7px;
-            margin-bottom: 4px;
+            padding-bottom: 4px; 
             font-size: 0.14rem;
             color: #9b9b9b;
           }
@@ -223,7 +221,15 @@
           background-color: white;
           border: 1px solid white;
           width: 2.18rem;
-
+          &.ip-item-relative{
+            position: relative;
+            .ip-item-certification{
+              position: absolute;
+              width: 0.78rem; 
+              right: 0;
+              top: 1.5rem;
+            }
+          }
           .ip-item-img {
             width: 2.18rem;
             height: 2.18rem;
@@ -232,8 +238,7 @@
           span {
             font-size: 0.16rem;
             color: $limit-title-color;
-            margin-top: 0.15rem;
-
+            margin-top: 0.15rem; 
           }
 
           .ip-item-sub-type {
@@ -482,6 +487,9 @@
           position: relative;
           z-index: 99;
 
+          >.certification{
+            display: none;
+          }
           .ip-type-item {
 
             .ip-type-img {
@@ -527,7 +535,12 @@
 
             }
           }
-
+          >.certification{
+            position: absolute;
+            right: 0;
+            bottom: 0.2rem;
+            width: 0.78rem; 
+          } 
           .ip-type-item-text {
             display: flex;
             margin: 0.12rem 0 0;
@@ -577,13 +590,17 @@
             top: 0;
             z-index: 99;
             overflow: hidden;
-
+            .hover-certification{
+              position: absolute; 
+              width: 0.78rem; 
+              right: 0;
+              top: 0;
+            }
             .hover-content {
               overflow: hidden;
 
               .left-content {
                 display: inline-block;
-
                 .hover-type-name.name {
                   font-size: 0.2rem;
                   color: #343A40;

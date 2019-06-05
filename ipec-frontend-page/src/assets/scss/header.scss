@@ -16,7 +16,7 @@
     color: #999;
     font-size: 0.16rem;
 
-    padding: 0.256rem 0.16rem;
+    padding: 0.256rem 0.2rem 0.256rem 0;
 
     &:hover {
       color: #6248FF;
@@ -24,7 +24,7 @@
   }
 
   .logo {
-    margin-right: 0.16rem;
+    margin-right: 1rem;
   }
 
   .nav-item {
@@ -48,12 +48,16 @@
       .hover-sub-item {
         display: flex;
         width: 1.18rem;
-        padding: 0.14rem 0.1rem 0.14rem 0.21rem;
+        padding: 0.14rem 0.1rem 0.14rem 0.06rem;
         cursor: pointer;
         text-align: left;
         line-height: normal;
         font-size: 0.16rem;
         color: #888;
+
+        img {
+          width: 21px;
+        }
 
         .icon-span {
           padding-right: 5px;
@@ -64,6 +68,8 @@
           font-size: inherit;
           color: inherit;
           font-weight: 500;
+          width: 100%;
+          text-align: center;
         }
       }
 
@@ -109,7 +115,7 @@
     }
 
     .search_pulldown {
-      width: 3.69rem;
+      width: 2.8rem;
       min-height: 48px;
       position: absolute;
       right: 0;
@@ -175,7 +181,7 @@
 
   .user-operation {
     margin-left: 0.32rem;
-    background-image: linear-gradient(89deg, #F760D5 0%, #FF6B6B 100%);
+    background-image:$balance-button-active;
     border-radius: 4px;
     color: #f5f5f5;
     padding: 11px 29px;
@@ -270,7 +276,7 @@
     .login-hover {
       z-index: 99;
       width: 1.8rem;
-      height: 2.8rem;
+      //height: 2.8rem;
       position: absolute;
       background: #fff;
       top: 0.432rem;
@@ -278,6 +284,46 @@
       //top:0.6rem;
       border-radius: 0.04rem;
       box-shadow: 0 4px 9px rgba(195, 205, 222, 0.6);
+
+      .li-special {
+        height: 0.8rem;
+
+        .flex {
+          display: flex;
+          height: 0.8rem;
+          border-bottom: 1px dashed #e5e5e5;
+
+          .head-img {
+            width: 0.48rem;
+            height: 0.48rem;
+          }
+
+          div {
+            height: 0.8rem;
+
+            span {
+              font-weight: normal;
+              display: block;
+              height: 0.2rem;
+              margin: 0.02rem 0 0;
+
+              img {
+                width: 0.2rem;
+                height: 0.2rem;
+              }
+            }
+
+            .certification {
+              color: #ADB5BD;
+              font-size: 0.12rem;
+            }
+
+            .active {
+              color: #f5a623;
+            }
+          }
+        }
+      }
 
       li {
         height: 0.56rem;
@@ -302,6 +348,7 @@
           line-height: 0.56rem;
           font-weight: normal;
         }
+
       }
 
       li:hover {

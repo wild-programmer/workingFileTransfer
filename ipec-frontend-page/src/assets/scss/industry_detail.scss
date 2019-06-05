@@ -75,7 +75,7 @@
                 zoom: 1;
                 p {
                     font-size: 14px;
-                    color: #6b7177; 
+                    color: #6b7177;
                     margin: 0px;
                     padding: 0px;
                 }
@@ -88,11 +88,13 @@
             }
         }
         .industry_detail_user_two{
-          width: 250px;
+          // width: 250px;
+          width: 60px;
           height: 50px;
-          position: absolute; 
+          position: absolute;
           right: 0;
-          padding-left: 40px; 
+          // padding-left: 40px;
+          padding-left: 0px;
           margin: 0;
           .bdsharebuttonbox{
             zoom: 1;
@@ -159,7 +161,7 @@
               color: rgb(255, 107, 107) !important;
             }
           }
-          .icon-ic_like {
+          .iconic_praise {
               cursor: pointer;
           }
         }
@@ -173,7 +175,7 @@
     .industry_detail_two{
       width: 348px !important;
       margin-left: 20px;
-      float: left; 
+      float: left;
       right: 70px;
       top: 72px;
       .head_user {
@@ -221,19 +223,19 @@
           margin-bottom: 32px;
           margin-top: 18px;
           margin-left: 40px;
-          overflow: hidden; 
+          overflow: hidden;
           a:link, a:visited {
               text-decoration: none;
           }
           a {
               outline: none !important;
-              display: block; 
+              display: block;
               background-color: #d8d8d8;
               img {
                   width: 100%;
               }
 
-            .people_img { 
+            .people_img {
               width: 100%;
               min-height: 160px;
               border-radius: 6px;
@@ -278,7 +280,7 @@
       margin: 0px;
       border: 0;
     }
-    div{ 
+    div{
       margin: 0px;
       padding: 0px;
     }
@@ -304,107 +306,11 @@
       padding: 0px;
     }
   }
-  .industry_ul{
-    list-style: none;
-    margin: 0px;
-    padding: 0px;
-    div.code{
-      height: 124px;
-      width: 124px;
-      position: fixed;
-      bottom: 38px;
-      right: 71px;
-      background-color: #ffffff;
-      z-index: 999;
-      display: none; 
-      .codeIn {
-        width: 103px;
-        height: 103px;
-        margin: 1px 8px 17px 10px;
-        img {
-            width: 100%;
-        }
-        p {
-          font-family: PingFangSC-Regular;
-          font-size: 12px;
-          color: #666666;
-          letter-spacing: 0;
-          margin-left: 10px;
-        }
-      }
-    }
-    img {
-      padding: 0px;
-      margin: 0px;
-      border: 0;
-      vertical-align: middle;
-    }
-    .user_iconlist,
-    .code_iconlist,
-    .top_iconlist{
-      box-sizing: border-box;
-      i{
-        font-style: italic;
-        width: 24px;
-      }
-    }
-    .user_iconlist {
-      width: 40px;
-      height: 40px;
-      background: #ffffff;
-      text-align: center;
-      box-shadow: 0 0 4px 0 #E9ECEF;
-      padding-top: 7px;
-      z-index: 100;
-      cursor: pointer;
-      position: fixed;
-      bottom: 60px;
-      right: 30px;
-      margin-bottom: 62px; 
-    }
-    .code_iconlist {
-      width: 40px;
-      height: 40px;
-      background: #ffffff;
-      text-align: center;
-      box-shadow: 0 0 4px 0 #E9ECEF;
-      padding-top: 9px;
-      z-index: 100;
-      cursor: pointer;
-      position: fixed;
-      bottom: 60px;
-      right: 30px;
-      margin-bottom: 20px;
-      &:hover{
-        div.code{
-          display: block;
-        }
-      }
-    }
-    .top_iconlist {
-      width: 40px;
-      height: 40px;
-      background: #fff;
-      text-align: center;
-      box-shadow: 0 0 4px 0 #E9ECEF;
-      padding-top: 8px;
-      z-index: 100;
-      cursor: pointer;
-      position: fixed;
-      bottom: 38px;
-      right: 30px;
-    }
-  li {
-    list-style: none;
-    padding: 0px;
-    margin: 0px;
-    display: list-item;
-  }
-  }
+ 
   .footer-container{
-    display: block; 
+    display: block;
     position: relative;
-  } 
+  }
   .clearfix:after {
     content: '';
     clear: both;

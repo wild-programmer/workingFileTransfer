@@ -1,13 +1,16 @@
 @import "~bootstrap/scss/bootstrap";
 @import "var";
 @import "../fonts/iconfont.css";
-.contact-container{
+
+.contact-container {
   background-color: #f1f3f5;
+
   li {
     list-style: none;
     padding: 0px;
     margin: 0px;
   }
+
   .static-menu ul,
   ul {
     list-style: none;
@@ -81,6 +84,7 @@
     text-decoration: none;
     /*鼠标放上去有下划线*/
   }
+
   .clearfix:after {
     content: '';
     clear: both;
@@ -88,6 +92,7 @@
     display: block;
     height: 0;
   }
+
   .h1, .h2, .h3, h1, h2, h3 {
     margin-top: 0;
   }
@@ -136,7 +141,7 @@
     // position: absolute;
     // right: 70px;
     margin-left: 250px;
-    width: 888px; 
+    width: 888px;
     background-color: #fff;
     border-radius: 6px;
   }
@@ -211,4 +216,53 @@
     color: #8a54be;
   }
 
+}
+
+
+.about-container {
+  background: #fff;
+
+  .about-content {
+    width: 11.4rem;
+    padding: 0.75rem 0 0;
+    margin: 0 auto ;
+    letter-spacing: 0;
+    color: #687177;
+
+    h4 {
+      font-size: 0.28rem;
+      line-height: 0.28rem;
+      margin-bottom: 0.47rem;
+      color: #343A40;
+      text-align: center;
+    }
+    .last-child{
+      margin-bottom: 0;
+      padding-bottom: 0.62rem;
+    }
+    p {
+      font-size: 0.16rem;
+      line-height: 0.32rem;
+      margin-bottom: 0.2rem;
+      text-indent: 0.28rem;
+    }
+
+    .flex {
+      width: 11.4rem;
+      display: inline-block;
+      margin-bottom: 0.16rem;
+
+      img {
+        width: 2.12rem;
+        height: 2.12rem;
+      }
+
+      .flex-right {
+        display:inline-block;
+        width: 9.03rem;
+        margin-left: 0.2rem;
+        vertical-align: top;
+      }
+    }
+  }
 }
