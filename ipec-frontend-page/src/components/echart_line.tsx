@@ -34,9 +34,10 @@ export default class EchartLine extends React.Component<IProps, any> {
         subtext,
       },
       tooltip: {},
-      // grid: [
-      //   { left: 30, right: 30 }
-      // ],
+      //  grid: {
+      //   left: "3%",
+      //   right: "1%"
+      // },
       xAxis: {
         type: "category",
         data: this.props.xHot,
@@ -77,12 +78,12 @@ export default class EchartLine extends React.Component<IProps, any> {
         data: this.props.yHot,
         type: "line",
         itemStyle: {
-          color: "#7B3DCB",
+          color: "#6248ff",
         },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
             offset: 0,
-            color: "#B270E7",
+            color: "#9b7eff",
           }, {
             offset: 1,
             color: "#fff",

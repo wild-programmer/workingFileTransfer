@@ -17,6 +17,10 @@ interface IPechartMap {
 export default class EchartMap extends React.Component<IPechartMap, any> {
 
   option() {
+    // {
+    //   name:'',
+    //   value:''
+    // }
     return {
       tooltip: {
         trigger: "item",
@@ -71,7 +75,7 @@ export default class EchartMap extends React.Component<IPechartMap, any> {
     };
   }
 
-  render() {
+  render() { 
     return (
       <div className="echart-map">
         <ReactEcharts option={this.option()}/>

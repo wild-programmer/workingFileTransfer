@@ -17,7 +17,6 @@ interface IPEchartBarSpecial {
 }
 
 export default class EchartBarSpecial extends React.Component<IPEchartBarSpecial, any> {
-
   option() {
     const { subtext, xData, yPercent } = this.props;
     let dataShadow = [];

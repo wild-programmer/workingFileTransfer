@@ -3,36 +3,36 @@ import { Link, NavLink } from 'react-router-dom';
 import '@assets/scss/header.scss';
 import Add from '@assets/images/add.svg';
 import Ring from '@assets/images/ring.svg';
-// import UserHeader from '@assets/images/user/ic_head.svg';
-import IconHeader from "@assets/images/user/icon_header.svg";
 import '@assets/fonts/iconfont.css';
-import ipec_logo from '@assets/images/logo.svg';
+import ipec_logo from '@assets/images/logo2.0.png';
+import animation from '@assets/images/IPsvg/animation.svg';
+import design from '@assets/images/IPsvg/design.svg';
+import art from '@assets/images/IPsvg/art.svg';
+import book from '@assets/images/IPsvg/book.svg';
+import brand from '@assets/images/IPsvg/brand.svg';
+import entertainment from '@assets/images/IPsvg/entertainment.svg';
+import life from '@assets/images/IPsvg/life.svg';
+import sport from '@assets/images/IPsvg/sport.svg';
+import play from '@assets/images/IPsvg/play.svg';
+import star from '@assets/images/IPsvg/star.svg';
 import { toJS } from 'mobx';
 import { inject, observer } from 'mobx-react';
+import _isEmpty from 'lodash/isEmpty';
+import ic_attestation from '@assets/images/user/ic_attestation.svg';
+import ic_attestation_pr from '@assets/images/user/ic_attestation_pr.svg';
+import ic_user from '@assets/images/user.svg';
 
 const subTypeObj = {
-  'IP形象': 'icon-ic_image',
-  '文创艺术': 'icon-ic_art',
-  '电视剧': 'icon-ic_tv_series',
-  '电影': 'icon-ic_film',
-  '综艺': 'icon-ic_variety',
-  '明星艺人': 'icon-ic_star',
-  '动画': 'icon-ic_animation',
-  '漫画': 'icon-ic_cartoon',
-  '图书': 'icon-ic_book',
-  '网文': 'icon-ic_animation',
-};
-const numberKV = {
-  'IP形象': 1,
-  '文创艺术': 2,
-  '图书': 3,
-  '网文': 4,
-  '电视剧': 5,
-  '电影': 6,
-  '综艺': 7,
-  '明星艺人': 8,
-  '动画': 9,
-  '漫画': 10,
+  '卡通动漫': animation,
+  '文化艺术': art,
+  '生活方式': life,
+  '影视娱乐': entertainment,
+  '企业品牌': brand,
+  '体育运动': sport,
+  '名人明星': star,
+  '非营利机构': design,
+  '网络游戏': play,
+  '网文图书': book,
 };
 
 interface IHeaderProps extends IComponentProps {
@@ -52,6 +52,7 @@ interface IHeaderState {
 
 @inject('ip_list')
 @inject('industry')
+@inject('user')
 @observer
 export default class Header extends React.Component<IHeaderProps, IHeaderState> {
   constructor(props: any) {
@@ -64,11 +65,11 @@ export default class Header extends React.Component<IHeaderProps, IHeaderState> 
     };
   }
 
-  componentDidMount() {
-    this.getUserInfo();
+  async componentDidMount() {
+    await this.getUserInfo();
   }
 
-  getUserInfo() {
+  async getUserInfo() {
     let userLogin = sessionStorage.getItem('user');
     if (`${userLogin}` !== `${JSON.stringify(this.state.userLogin)}`) {
       if (userLogin) {
@@ -77,6 +78,15 @@ export default class Header extends React.Component<IHeaderProps, IHeaderState> 
       this.setState({
         userLogin,
       });
+    }
+    if (!_isEmpty(userLogin)) {
+      const { user } = this.props;
+      // @ts-ignore
+      const { userGuid } = userLogin;
+      await user.getUserInfo(userGuid);
+      const { personInfo } = user;
+      userLogin['realStatus'] = personInfo.realStatus;
+      sessionStorage.setItem("user", JSON.stringify(userLogin));
     }
   }
 
@@ -98,7 +108,7 @@ export default class Header extends React.Component<IHeaderProps, IHeaderState> 
   };
 
   render() {
-    const { style = {}, isActive, data: tmp, ip_list, industry } = this.props;
+    const { style = {}, data: tmp, ip_list, industry } = this.props;
     const data = toJS(tmp);
     const { mouseIsOpen, searchValue, pullDown } = this.state;
     let { customStatus } = ip_list;
@@ -122,14 +132,21 @@ export default class Header extends React.Component<IHeaderProps, IHeaderState> 
                   <div className="main-top-hover">
                     {
                       item.navName === 'IP库' && item.sublist.length > 1 && item.sublist.map((val) => {
-                        const { navName: name } = val;
+                        const { typeName: name, childTypeList } = val;
+                        let _ipTypeNumber = '';
+                        childTypeList && childTypeList.forEach(element => {
+                          _ipTypeNumber += `${element.ipTypeNumber},`;
+                        });
                         return (
                           <div key={name} className="hover-sub-item flex-row justify-content-start align-items-center">
-                            <i className={`icon-span icon iconfont ${subTypeObj[name]}`}/>
+                            {/* <i className={`icon-span icon iconfont ${subTypeObj[name]}`}/> */}
+                            <img src={subTypeObj[name]} className="iconimg" alt=""/>
                             <Link className="sub-type-a" to="/ip-list"
                                   onClick={async () => {
-                                    const ipTypeSuperiorNumber = numberKV[val.navName];
-                                    await ip_list.changeStatus({ selected: val.navName, ipTypeSuperiorNumber });
+                                    await ip_list.changeStatus({
+                                      selected: val.typeName,
+                                      ipTypeSuperiorNumbers: _ipTypeNumber
+                                    });
                                   }}>{name}</Link>
                           </div>
                         );
@@ -151,7 +168,7 @@ export default class Header extends React.Component<IHeaderProps, IHeaderState> 
             })
           }
           <li className="nav-item search-input-area">
-            <input type="text" className="search-input" placeholder="搜索影片、剧集、IP名称…"
+            <input type="text" autoComplete="off" className="search-input" placeholder="搜索影片、剧集、IP名称…"
                    onChange={(e) => {
                      this.setState({
                        searchValue: e.currentTarget.value,
@@ -223,14 +240,36 @@ export default class Header extends React.Component<IHeaderProps, IHeaderState> 
                    onMouseLeave={this.handleMouseOut}
                    onMouseEnter={this.handleMouseEnter}>
                 <div>
-                  {userdata.picUrl ? (<img src={userdata.picUrl} alt="icon"/>) : (<img src={IconHeader} alt="icon"/>)}
+                  {userdata.picUrl ? (<img src={userdata.picUrl || ic_user} alt="icon"/>) : (
+                    <img src={ic_user} alt="icon"/>)}
                 </div>
                 <div className="login-hover" style={{ display: mouseIsOpen }}>
                   <ul>
-                    {userdata.userNickname ? (<li>{userdata.userNickname}</li>) : (<li>我的昵称</li>)}
-                    <li className="hovli"><Link to="/user" className="hover-li">我的发布</Link></li>
-                    <li className="hovli"><Link to="/user" className="hover-li">个人信息</Link></li>
-                    <li className="hovli"><Link to="/user" className="hover-li">账号安全</Link></li>
+                    {userdata.userNickname ?
+                      (<li className="li-special">
+                        <div className="flex  justify-content-between align-items-center ">
+                          <img className="head-img" src={userdata.picUrl || ic_user} alt=""/>
+                          <div>
+                            <span>{userdata.userNickname}</span>
+                            {
+                              userdata.realStatus === 2 || userdata.realStatus === 3 ?
+                                <span className="certification">
+                                <img src={ic_attestation} alt=""/>
+                                未认证
+                              </span>
+                                :
+                                <span className="certification active">
+                                <img src={ic_attestation_pr} alt=""/>
+                                已认证
+                              </span>
+                            }
+                          </div>
+                        </div>
+                      </li>) : (<li>我的昵称</li>)}
+                    <li className="hovli"><Link to="/user/1" className="hover-li">我的发布</Link></li>
+                    <li className="hovli"><Link to="/user/2" className="hover-li">个人认证</Link></li>
+                    <li className="hovli"><Link to="/user/4" className="hover-li">企业主页</Link></li>
+                    <li className="hovli"><Link to="/user/3" className="hover-li">账号安全</Link></li>
                     <li
                       className="hovli"
                       onClick={() => this.logout()}

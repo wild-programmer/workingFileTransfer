@@ -2,7 +2,7 @@ import * as React from "react";
 import "@assets/scss/model.scss";
 import upload_img from "@assets/images/upload.png";
 import icon_close from "@assets/images/ic_close.svg";
-import { uploadBusinessData } from "@utils/api";
+import { uploadBusinessData, uploadUploadFile } from "@utils/api";
 import Alert from "@components/alert";
 import icon_excel from "@assets/images/update/ic_excel.svg";
 import icon_pdf from "@assets/images/update/ic_pdf.svg";
@@ -10,10 +10,11 @@ import icon_ppt from "@assets/images/update/ic_ppt.svg";
 import icon_delete from "@assets/images/update/ic_delete.svg";
 import { inject } from 'mobx-react';
 
-interface ImodelProps extends IComponentProps {
-  title: string,
+interface ImodelProps extends IComponentProps { 
   onClose: Function,
-  ipid: string,
+  ipid: string, 
+  setipMaterial:Function,
+  callback:Function,
   // onSubmit: Function,
   // onModel: Function,
 }
@@ -39,27 +40,41 @@ export default class UploadFileModel extends React.Component<ImodelProps, Imodel
   }
 
   async uploadFile(e) {
-    const {  ipid } = this.props;
+    const { ipid, setipMaterial, callback,fileType ,onClose,setotherInput} = this.props;
     const { userGuid } = JSON.parse(sessionStorage.getItem("user"));
     let file = e.target.files[0];
     let size = file.size;
     let name = file.name;
     let is50M = size / 1024 / 1024 < 50;
-    let type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-      "application/pdf" || "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    let type = '';
+    
+    console.log(file.type) 
     if (!is50M) {
       this.setState({
         isAlert: true,
         message: "文件过大，请重新选择上传"
       });
       return false;
-    } else if (type !== file.type) {
-      this.setState({
-        isAlert: true,
-        message: "文件格式不对，请重新选择上传"
-      });
-      return false;
-    } else {
+    } 
+    if (fileType && fileType.type == 1) { 
+        if (file.type !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" &&file.type !== "application/vnd.openxmlformats-officedocument.presentationml.presentation"&&
+        file.type !== "application/pdf" && file.type !=="application/vnd.openxmlformats-officedocument.presentationml.presentation") {
+          this.setState({
+            isAlert: true,
+            message: "文件格式不对，请重新选择上传"
+          });
+          return false;
+        } 
+    } else {  
+      if (file.type !== "application/zip" && file.type !== "application/x-zip" &&file.type !==  "application/x-zip-compressed") {
+        this.setState({
+          isAlert: true,
+          message: "文件格式不对，请重新选择上传"
+        });
+        return false;
+      } 
+    } 
+    
       let reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = async (e) => {
@@ -68,29 +83,75 @@ export default class UploadFileModel extends React.Component<ImodelProps, Imodel
         });
         let formData = new FormData();
         formData.append("file", file);
-        const params = { file: formData, userGuid, ipid };
-        const { errorCode, result }: any = await uploadBusinessData(params);
-        if (errorCode === '200' && result.errorCode === 200) {
-          this.setState({
-            uploadBox: false,
-          });
+        let params,
+          _result; 
+        if (ipid && fileType.type ==1) {
+          params = { file: formData, userGuid, ipid };
+          _result = await uploadBusinessData(params); 
+          callback({
+            businessList:true
+          }) 
+          onClose()
+          
         } else {
-          this.setState({
-            uploadBox: true,
-            isAlert: true,
-            message: result.errorMsg
-          });
+          params = { file: formData, userGuid, type: fileType.type };
+          _result = await uploadUploadFile(params);
+          if (_result.errorCode === '200' && _result.result.errorCode === 200) {
+            this.setState({
+              uploadBox: false,
+            });
+            if(fileType.type ==1){
+              let _time = new Date;
+              setipMaterial({
+                title: name,
+                guid: _result.result.data,
+                time: _time,
+              })
+            }else if(fileType.type == 2){
+              setotherInput({
+                copyrightAgent:{
+                  guid:_result.result.data,
+                  name:name,
+                },
+              })
+              onClose()
+            }else if(fileType.type == 3){
+              setotherInput({
+                copyrightCertificateGuid:{
+                  guid:_result.result.data,
+                  name:name,
+                },
+              })
+              onClose()
+            }else if(fileType.type == 4 || fileType.type ==5){
+              setotherInput({
+                ownershipGuid:{
+                  guid:_result.result.data,
+                  name:name,
+                },
+              })
+              onClose()
+            }
+          } else {
+            this.setState({
+              uploadBox: true,
+              isAlert: true,
+              message: _result.result.errorMsg
+            });
+          }
+          
         }
-      };
-    }
+
+       
+      }; 
   }
 
   render() {
-    const { title, onClose, } = this.props;
+    const { title, onClose, fileType} = this.props;
     const { uploadBox, isAlert, message, result } = this.state;
     return (
       <div className="model model-upload-file">
-        <div className="menban" onClick={() => onClose()}/>
+        <div className="menban" onClick={() => onClose()} />
         {isAlert && <Alert
           onClose={() => {
             this.setState({ isAlert: false });
@@ -98,42 +159,43 @@ export default class UploadFileModel extends React.Component<ImodelProps, Imodel
           onSubmit={() => {
             this.setState({ isAlert: false });
           }}
-          message={message}/>
+          message={message} />
         }
         <div className="model-container">
           <div className="model-header">
-            <span className="model-title">{title}</span>
+            <span className="model-title">{fileType.text}</span>
             <img src={icon_close} className="close" onClick={() => {
               onClose();
-            }} alt=""/>
-            <p>温馨提示：只支持PPT、PDF、Excel格式，单个文件大小在50M以内</p>
+            }} alt="" />
+            <p>{fileType.tip}</p>
           </div>
           <div className="model-body">
             {uploadBox &&
-            <div className="upload-box">
-              <input type="file" style={{ opacity: 0 }} onChange={async (e) => {
-                await this.uploadFile(e);
-              }}/>
-              <div className="upload-container" style={{ backgroundImage: `url(${upload_img})` }}/>
-            </div>
+              <div className="upload-box"> 
+                <input type="file" style={{ opacity: 0 }} accept=".zip,.ppt,.pptx,.pptm,.ppsx,.ppsx,.potx,.xlsx,.xlsm,.xlsm,.xltm,.xlsb,.xlam,.pdf" onChange={async (e) => {
+                  await this.uploadFile(e);
+                }} />
+                
+                <div className="upload-container" style={{ backgroundImage: `url(${upload_img})` }} />
+              </div>
             }
             {!uploadBox &&
-            <div className="upload-list">
-              {
-                result && result.map((item, index) => {
-                  return (
-                    <div className="single-list" key={index}>
-                      <img src="" className="file-type-img" alt=""/>
-                      <div className="file-content">
-                        <p className="file-name">{item}</p>
-                        <p className="file-state">上传成功！</p>
+              <div className="upload-list">
+                {
+                  result && result.map((item, index) => {
+                    return (
+                      <div className="single-list" key={index}>
+                        <img src="" className="file-type-img" alt="" />
+                        <div className="file-content">
+                          <p className="file-name">{item}</p>
+                          <p className="file-state">上传成功！</p>
+                        </div>
+                        <img src="" className="file-remove-this" alt="" />
                       </div>
-                      <img src="" className="file-remove-this" alt=""/>
-                    </div>
-                  );
-                })
-              }
-            </div>
+                    );
+                  })
+                }
+              </div>
             }
           </div>
           {
@@ -143,10 +205,10 @@ export default class UploadFileModel extends React.Component<ImodelProps, Imodel
                 继续 上传
                 <input className="btn btn-submit" type="file" style={{ opacity: 0 }} onChange={async (e) => {
                   await this.uploadFile(e);
-                }}/>
+                }} />
               </span>
 
-              <input type="button" className="btn btn-cancel" value="确定" onClick={() => onClose()}/>
+              <input type="button" className="btn btn-cancel" value="确定" onClick={() => onClose()} />
             </div>
           }
         </div>

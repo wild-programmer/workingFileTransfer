@@ -1,5 +1,5 @@
 import { action, observable } from "mobx";
-import { reqNavList } from "@utils/api";
+import { reqNavList, mediaType } from "@utils/api";
 
 class HeaderStore {
   @observable headerNav: any[] = [];
@@ -8,6 +8,7 @@ class HeaderStore {
   @action
   async navList() {
     let data: any = await reqNavList();
+    let _data: any = await mediaType();
     const { errorCode, result }: { errorCode: string, result: Array<any> } = data;
     if (errorCode === "200") {
       let headNav: any[] = [];
@@ -21,12 +22,16 @@ class HeaderStore {
           footNav.push(item);
         }
       });
+      headNav.forEach(item => {
+        if (item.navName === 'IP库') {
+          item.sublist = _data && _data.result;
+        }
+      });
       this.headerNav = headNav;
       this.footerNav = footNav;
     }
   }
 
-  
 }
 
 export default new HeaderStore();

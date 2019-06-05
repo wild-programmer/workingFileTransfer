@@ -12,39 +12,43 @@ import "@assets/scss/echart_bar.scss";
 
 interface IPEchartBar {
   container: string,
-  xHot: any,
-  yHot: any,
+  data: any,
+  date: any,
   subtext: any,
 }
 
-export default class EchartBar extends React.Component<IPEchartBar, any> {
-
-  // componentDidMount() {
-  //   const { container } = this.props;
-  //   this._changeOption(container, option);
-  //
-  // }
-
-  // _changeOption(container, option) {
-  //   let myChart = echarts.init(document.querySelector("." + container) as HTMLDivElement);
-  //   myChart.setOption(option);
-  // }
+export default class EchartDataZoomBoxOffice extends React.Component<IPEchartBar, any> {
+  private date: any;
 
   option() {
-    const { xHot, yHot, subtext } = this.props;
+    const { data, date, subtext } = this.props;
     let option = {
-      title: {
-        subtext,
-      },
-      tooltip: {},
-      //  grid: {
+      dataZoom: [{
+        type: 'inside',
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: false,
+      }, {
+        start: 0,
+        end: 10,
+        handleIcon: 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+        handleSize: '80%',
+        handleStyle: {
+          color: '#7b88ff',
+          shadowBlur: 3,
+          shadowColor: 'rgba(0, 0, 0, 0.6)',
+          shadowOffsetX: 2,
+          shadowOffsetY: 2
+        }
+      }],
+      // grid: {
       //   left: "3%",
       //   right: "1%"
       // },
       xAxis: {
         type: 'category',
-        // barWidth: 50,
-        data: xHot,
+        // boundaryGap: false,
+        data: date,
         axisLabel: {
           show: true,
           textStyle: {
@@ -62,6 +66,8 @@ export default class EchartBar extends React.Component<IPEchartBar, any> {
         },
       },
       yAxis: {
+        type: 'value',
+        boundaryGap: [0, '100%'],
         splitLine: {
           lineStyle: {
             type: "dashed",
@@ -77,36 +83,28 @@ export default class EchartBar extends React.Component<IPEchartBar, any> {
           },
         },
       },
-      series: [
-        {
-          type: "bar",
-          barMaxWidth: 30,
-          itemStyle: {
-            normal: {
-              color: new echarts.graphic.LinearGradient(
-                0, 0, 0, 1,
-                [
-                  { offset: 0, color: "#2853ff" },
-                  { offset: 1, color: "#933efe" },
-                  // { offset: 0, color: "#7B3DCB" },
-                  // { offset: 0.5, color: "#bf2dd0" },
-                  // { offset: 1, color: "#FF86FF" },
-                ],
-              ),
-            },
-            emphasis: {
-              color: new echarts.graphic.LinearGradient(
-                0, 0, 0, 1,
-                [
-                  { offset: 0, color: "#7B3DCB" },
-                ],
-              ),
-            },
-          },
-          data: yHot,
+
+      series: [{
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        sampling: 'average',
+        itemStyle: {
+          color: "#6248ff",
         },
-      ],
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+            offset: 0,
+            color: "#6248ff",
+          }, {
+            offset: 1,
+            color: "#fff",
+          }]),
+        },
+        data,
+      }]
     };
+
     return option;
   }
 

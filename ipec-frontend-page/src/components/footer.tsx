@@ -32,7 +32,7 @@ export default class Footer extends React.Component<IFooterProps> {
                       let idx = i + "sublist";
                       return (
                         <li key={idx}>
-                          <Link to={sub.navUrl}>{sub.navName}</Link> 
+                          <Link to={sub.navUrl}>{sub.navName}</Link>
                         </li>
                       );
                     })
@@ -95,7 +95,7 @@ export default class Footer extends React.Component<IFooterProps> {
           {/*</div>*/}
         </div>
         <div className="footer-bottom">
-          <div>Copyright &copy; 2018 www.indexip.cn. All rights reserved.(V2.0)
+          <div>Copyright &copy; 2019 沪ICP备18022525号. All rights reserved.
           </div>
         </div>
       </div>
